@@ -1,4 +1,8 @@
-class Reserva:
+from db import Base
+
+class Reserva(Base):
+	__tablename__ = 'reservas'
+
 	def __init__(self, cancha, dia, hora, duración, teléfono, nombre_contacto):
 		self.cancha = cancha
 		self.dia = dia
