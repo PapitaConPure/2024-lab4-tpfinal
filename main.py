@@ -1,6 +1,6 @@
 from db import create_models
 from fastapi import FastAPI
-from routers import cancha, reserva
+from routers import canchas, reservas
 
 create_models()
 app = FastAPI()
@@ -9,8 +9,8 @@ app = FastAPI()
 def raíz():
 	return { 'Hola': ':)' }
 
-app.include_router(cancha.router)
-app.include_router(reserva.router)
+app.include_router(canchas.router)
+app.include_router(reservas.router)
 
 if __name__ == '__main__':
 	pass
