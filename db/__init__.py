@@ -7,9 +7,9 @@ from sqlalchemy.orm import sessionmaker
 load_dotenv()
 pg_uri = getenv('POSTGRES_URI')
 engine = create_engine(pg_uri)
-Session = sessionmaker(bind=engine)
+MakeSession = sessionmaker(bind=engine, expire_on_commit=False)
 Base = declarative_base()
 
-def session_factory():
+def create_models():
+    """Crea todos los modelos definidos para la base de datos"""
     Base.metadata.create_all(engine)
-    return Session()

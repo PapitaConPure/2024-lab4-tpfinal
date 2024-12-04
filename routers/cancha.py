@@ -1,14 +1,43 @@
-from db import Base
-from sqlalchemy import Column, Integer, String, Boolean
+from typing import Optional
+from fastapi import APIRouter
+from db import MakeSession, crud, schemas
 
-class Cancha(Base):
-	__tablename__ = 'canchas'
+router = APIRouter(prefix='/canchas')
 
-	id = Column(Integer, primary_key=True)
-	nombre = Column(String)
-	techada = Column(Boolean)
+@router.get('/')
+def raíz_reservas():
+	session = MakeSession()
+	session.close()
+	return { 'what': 'lmao' }
 
-	def __init__(self, nombre, techada):
-		self.nombre = nombre
-		self.techada = techada
-		pass
+@router.get('/q')
+def get_canchas(
+	min: Optional[int] = None,
+	max: Optional[int] = None,
+	nombre: Optional[str] = None,
+	techada: Optional[bool] = None,
+) -> list[schemas.Cancha]:
+	session = MakeSession()
+	
+	if(max is not None and min is None):
+		min = 0
+	
+	if(min is not None and max is None):
+		max = 2 ** 53 - 1
+
+	canchas = crud.get_canchas(session,
+		nombre = nombre,
+		rango = (min, max) if (min is not None and max is not None) else None,
+		techada = techada,
+	)
+	session.close()
+	
+	return canchas
+
+@router.get('/id/{id}')
+def get_cancha(id: int) -> schemas.Cancha:
+	session = MakeSession()
+	cancha = crud.get_cancha(session, id)
+	session.close()
+
+	return cancha

@@ -1,19 +1,16 @@
-from db import session_factory
+from db import create_models
 from fastapi import FastAPI
-from routers.cancha import Cancha
+from routers import cancha, reserva
 
+create_models()
 app = FastAPI()
 
-def create_data():
-	session = session_factory()
-	cancha1 = Cancha('cancha1', True)
-	session.add(cancha1)
-	session.commit()
-	session.close()
-
 @app.get('/')
-def read_root():
-	return { 'Hello': 'World' }
+def raíz():
+	return { 'Hola': ':)' }
+
+app.include_router(cancha.router)
+app.include_router(reserva.router)
 
 if __name__ == '__main__':
-	create_data()
+	pass
