@@ -1,18 +1,13 @@
 from fastapi import FastAPI
 from db import create_models
 from routers import canchas, reservas
-from routers.responses import RequestResponse, RequestResponseSchema
 
 create_models()
 app = FastAPI()
 
-@app.get('/', response_model = RequestResponseSchema[None])
-def raíz() -> RequestResponse[None]:
-	return RequestResponse(
-		status=200,
-		status_message='OK',
-		data=None,
-	)
+@app.get('/', status_code=200)
+def raíz() -> str:
+	return 'Server en funcionamiento'
 
 app.include_router(canchas.router)
 app.include_router(reservas.router)
