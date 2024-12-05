@@ -1,16 +1,15 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class CanchaBase(BaseModel):
 	nombre: str
 	techada: bool
 
 class CanchaCreate(CanchaBase):
-	def __init__(self, nombre: str, techada: bool):
-		self.nombre = nombre
-		self.techada = techada
+	pass
 
-class Cancha(CanchaBase):
+class CanchaSchema(CanchaBase):
 	id: int
+	model_config = ConfigDict(from_attributes=True)
 
 class ReservaBase(BaseModel):
 	id_cancha: int
@@ -23,5 +22,6 @@ class ReservaBase(BaseModel):
 class ReservaCreate(ReservaBase):
 	pass
 
-class Reserva(ReservaBase):
+class ReservaSchema(ReservaBase):
 	id: int
+	model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
