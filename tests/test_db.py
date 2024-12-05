@@ -1,21 +1,30 @@
-import unittest
+from unittest import TestCase
 from db import MakeSession
-from db.crud import create_cancha, get_canchas
+from db.crud import create_cancha, delete_cancha, get_cancha, get_canchas
 from db.schemas import CanchaCreate
 
-class TestDB(unittest.TestCase):
-	def test_add_remove_cancha(self):
+class TestDB(TestCase):
+	def test_db_add_remove_cancha(self):
 		session = MakeSession()
 		cancha1 = create_cancha(session, CanchaCreate.model_construct(nombre = 'cancha1', techada = True))
 
-		self.assertAlmostEqual(cancha1.nombre, 'cancha1')
+		self.assertEqual(cancha1.nombre, 'cancha1')
 		self.assertTrue(cancha1.techada)
 
 		session.add(cancha1)
 		session.commit()
+
+		resultado_delete = delete_cancha(session, id_cancha=cancha1.id)
+		self.assertIsNotNone(resultado_delete)
+
+		cancha1 = get_cancha(session, cancha_id=cancha1.id)
+		self.assertIsNone(cancha1)
+
+		session.commit()
+
 		session.close()
 
-	def test_query_canchas(self):
+	def test_db_query_canchas(self):
 		session = MakeSession()
 		cancha0 = create_cancha(session, CanchaCreate.model_construct(nombre = 'cancha0', techada = False))
 		cancha1 = create_cancha(session, CanchaCreate.model_construct(nombre = 'cancha1', techada = True))
@@ -55,5 +64,23 @@ class TestDB(unittest.TestCase):
 
 		canchas = get_canchas(session, nombre='cancha2')
 		self.assertEqual(canchas[0].nombre, 'cancha2')
+
+		session.close()
+
+	def test_db_update_canchas(self):
+		session = MakeSession()
+		canchas = get_canchas(session, rango=(0, 10), nombre='cancha2')
+		session.commit()
+
+		self.assertTrue(cancha == 'cancha2' for cancha in canchas)
+		self.assertGreaterEqual(len(canchas), 0)
+		self.assertLess(len(canchas), 10)
+
+		cancha = canchas[0]
+		cancha.nombre='Paulo'
+		cancha.techada=False
+
+		self.assertEqual(cancha.nombre, 'Paulo')
+		self.assertEqual(cancha.techada, False)
 
 		session.close()
