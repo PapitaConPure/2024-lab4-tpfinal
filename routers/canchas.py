@@ -64,7 +64,7 @@ def crear_cancha(
 	return cancha
 
 @router.patch('/id/{id_cancha}', status_code = status.HTTP_200_OK, response_model = CanchaSchema | str | None)
-def modificar_reserva(
+def modificar_cancha(
 	id_cancha: int,
 	response: Response,
 	nombre: Optional[str] = None,
