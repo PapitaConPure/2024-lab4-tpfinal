@@ -22,5 +22,5 @@ class Reserva(Base):
 	hora: Mapped[int] = mapped_column(SmallInteger, nullable=False)
 	duración_minutos: Mapped[int] = mapped_column(Integer, nullable=False)
 	teléfono: Mapped[str] = mapped_column(String, nullable=False)
-	nombre_contacto: Mapped[str] = mapped_column(String)
+	nombre_contacto: Mapped[str] = mapped_column(String, nullable=False)
 	id_cancha: Mapped[int] = mapped_column(Integer, ForeignKey('canchas.id'), nullable=False)
