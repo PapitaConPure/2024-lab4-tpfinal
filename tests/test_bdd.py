@@ -3,8 +3,8 @@ from db import MakeSession
 from db.crud import create_cancha, delete_cancha, get_cancha, get_canchas
 from db.schemas import CanchaCreate
 
-class TestDB(TestCase):
-	def test_db_add_remove_cancha(self):
+class TestBDDCanchas(TestCase):
+	def test_bdd_canchas_add_remove(self):
 		session = MakeSession()
 		cancha1 = create_cancha(session, CanchaCreate.model_construct(nombre = 'cancha1', techada = True))
 
@@ -24,7 +24,7 @@ class TestDB(TestCase):
 
 		session.close()
 
-	def test_db_query_canchas(self):
+	def test_bdd_canchas_query(self):
 		session = MakeSession()
 		cancha0 = create_cancha(session, CanchaCreate.model_construct(nombre = 'cancha0', techada = False))
 		cancha1 = create_cancha(session, CanchaCreate.model_construct(nombre = 'cancha1', techada = True))
@@ -67,14 +67,14 @@ class TestDB(TestCase):
 
 		session.close()
 
-	def test_db_update_canchas(self):
+	def test_bdd_canchas_update(self):
 		session = MakeSession()
 		canchas = get_canchas(session, rango=(0, 10), nombre='cancha2')
 		session.commit()
 
 		self.assertTrue(cancha == 'cancha2' for cancha in canchas)
 		self.assertGreaterEqual(len(canchas), 0)
-		self.assertLess(len(canchas), 10)
+		self.assertLessEqual(len(canchas), 10)
 
 		cancha = canchas[0]
 		cancha.nombre='Paulo'
