@@ -149,6 +149,16 @@ class TestAPICanchas(TestCase):
 		self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
 		response.close()
 
+	def test_get_query_fails_qmin(self):
+		response = client.get('/canchas/q?qmin=:::')
+		self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+		response.close()
+
+	def test_delete_query_fails_qmin(self):
+		response = client.delete('/canchas/q?qmin=wasd')
+		self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+		response.close()
+
 
 class TestAPIReservas(TestCase):
 	"""Tests de los endpoints para Reservas"""
@@ -203,6 +213,20 @@ class TestAPIReservas(TestCase):
 		for cancha in data:
 			TestAPIReservas.verificar_reserva(self, cancha)
 
+	def test_get_query_uphalf(self):
+		response = client.get('/reservas')
+		data = response.json()
+		response.close()
+
+		total_count = len(data)
+		half_count = int(total_count / 2)
+
+		response = client.get(f'/reservas/q?qmin={half_count}')
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		data = response.json()
+
+		self.assertEqual(len(data), total_count - half_count)
+
 	def test_post(self):
 		response = client.post('/canchas?nombre=temporal')
 		data = response.json()
@@ -254,7 +278,7 @@ class TestAPIReservas(TestCase):
 			self.assertEqual(data['nombre_contacto'], equalities[i]['nombre_contacto'])
 
 			client.delete(f'reservas/id/{data['id']}').close()
-			
+
 		client.delete(f'canchas/id/{idc}').close()
 
 	def test_patch(self):
@@ -302,7 +326,16 @@ class TestAPIReservas(TestCase):
 		self.assertEqual(data['nombre_contacto'], 'juan')
 
 	def test_delete_query(self):
-		response = client.delete('/reservas/q?qmax=2&id_cancha=220')
+		response = client.post('/canchas?nombre=temporal&techada=1')
+		data = response.json()
+		idc = data['id']
+		response.close()
+
+		client.post(f'/reservas/cancha/{idc}?dia=1&hora=18&dur_mins=45&tel=93434502306&nom_contacto=pocahontas').close()
+		client.post(f'/reservas/cancha/{idc}?dia=9&hora=19&dur_mins=180&tel=93434205774&nom_contacto=rodrigo').close()
+		client.post(f'/reservas/cancha/{idc}?dia=6&hora=22&dur_mins=90&tel=93439122017&nom_contacto=brayan').close()
+
+		response = client.delete(f'/reservas/q?qmax=5&id_cancha={idc}&dur=30:300')
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		data = response.json()
 		response.close()
@@ -310,5 +343,34 @@ class TestAPIReservas(TestCase):
 		self.assertEqual(type(data), list)
 
 		if len(data) > 0:
-			#TODO: Reemplazar por dict válido para Reserva
-			self.assertDictEqual(data[0], { 'nombre': 'cancha4', 'techada': True })
+			reserva = data[0]
+
+			self.assertEqual(reserva['id_cancha'], idc)
+
+		client.delete(f'reservas/q?id_cancha={idc}')
+		client.delete(f'canchas/id/{idc}')
+
+	def test_get_query_fails_dia_ab(self):
+		response = client.get('/reservas/q?dia=a:b')
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		response.close()
+
+	def test_get_query_fails_dia_locura(self):
+		response = client.get('/reservas/q?dia=::sdfsdvcsx:')
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		response.close()
+
+	def test_get_query_fails_dia_lonly(self):
+		response = client.get('/reservas/q?dia=a:3')
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		response.close()
+
+	def test_get_query_fails_dia_ronly(self):
+		response = client.get('/reservas/q?dia=2:b')
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		response.close()
+
+	def test_get_query_fails_dia_3elems(self):
+		response = client.get('/reservas/q?dia=1:2:3')
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		response.close()

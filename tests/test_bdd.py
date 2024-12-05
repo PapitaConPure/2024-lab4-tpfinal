@@ -4,7 +4,7 @@ from db.crud import create_cancha, delete_cancha, get_cancha, get_canchas
 from db.schemas import CanchaCreate
 
 class TestBDDCanchas(TestCase):
-	def test_bdd_canchas_add_remove(self):
+	def test_add_remove(self):
 		session = MakeSession()
 		cancha1 = create_cancha(session, CanchaCreate.model_construct(nombre = 'cancha1', techada = True))
 
@@ -24,7 +24,7 @@ class TestBDDCanchas(TestCase):
 
 		session.close()
 
-	def test_bdd_canchas_query(self):
+	def test_query(self):
 		session = MakeSession()
 		cancha0 = create_cancha(session, CanchaCreate.model_construct(nombre = 'cancha0', techada = False))
 		cancha1 = create_cancha(session, CanchaCreate.model_construct(nombre = 'cancha1', techada = True))
@@ -65,7 +65,7 @@ class TestBDDCanchas(TestCase):
 
 		session.close()
 
-	def test_bdd_canchas_update(self):
+	def test_update(self):
 		session = MakeSession()
 		canchas = get_canchas(session, rango=(0, 10), nombre='cancha2')
 		session.commit()
