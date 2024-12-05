@@ -40,7 +40,7 @@ def _buscar_rango_u_exacto(
 		if rmin > rmax:
 			(rmin, rmax) = (rmax, rmin)
 
-		query = query.filter(columna >= argumento[0] and columna < argumento[1])
+		query = query.filter(and_(columna >= rmin, columna < rmax))
 		filtrado = True
 
 	if not filtrado and argumento is not None:
@@ -60,10 +60,11 @@ def _agregar_criterio_de_rango_u_valor(
 		return
 
 	if isinstance(argumento, tuple):
-		if not isinstance(argumento, int):
+		if(not isinstance(argumento[0], int)
+		or not isinstance(argumento[1], int)):
 			raise ValueError('Este criterio debe ser un entero o una tupla de dos enteros (rango)')
 
-		criterios.append(and_(columna > argumento[0], columna < argumento[1]))
+		criterios.append(and_(columna >= argumento[0], columna < argumento[1]))
 
 	if not isinstance(argumento, int):
 		raise ValueError('El día de la Reserva debe ser un entero')
@@ -359,7 +360,7 @@ def delete_reservas(session: _Session,
 
 		criterios.append(Reserva.nombre_contacto == nombre_contacto)
 
-	subselect = select(Reserva)
+	subselect = select(Reserva.id)
 
 	if len(criterios) > 0:
 		subselect = subselect.where(and_(*criterios))
