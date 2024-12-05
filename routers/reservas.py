@@ -193,8 +193,51 @@ def quitar_reservas_por_consulta(
 ) -> list[Reserva] | str | None:
 	session = MakeSession()
 
-	reservas_eliminadas = crud.delete_reservas(session) #TODO: Colocar argumentos correspondientes y flujo de control de errores
+	def obtener_rango_u_valor(
+		x: str | None,
+		nom_criterio: str='<<criterio desconocido>>',
+	) -> int | tuple[int, int] | None:
+		if x is None:
+			return None
 
-	session.close()
+		mensaje_error_formato = f'El criterio de búsqueda según {nom_criterio} ({x=})'\
+			' debe expresarse como un entero o un rango bajo el formato "min:max"'
 
-	return reservas_eliminadas
+		try:
+			if ':' not in x:
+				return int(x)
+
+			partes = x.split(':')
+
+			if len(partes) != 2:
+				raise ValueError(mensaje_error_formato)
+
+			return (
+				int(partes[0]) if len(partes[0]) > 0 else 0,
+				int(partes[1]) if len(partes[1]) > 0 else 2**53 - 1,
+			)
+		except ValueError as exc:
+			raise ValueError(mensaje_error_formato) from exc
+
+	try:
+		rango = crud.qparams_a_rango(qmin, qmax)
+		dia_rango_u_valor = obtener_rango_u_valor(dia, 'día')
+		hora_rango_u_valor = obtener_rango_u_valor(hora, 'hora')
+		dur_mins_rango_u_valor = obtener_rango_u_valor(dur_mins, 'duración en minutos')
+
+		reservas = crud.delete_reservas(
+			session,
+			id_cancha=id_cancha,
+			rango=rango,
+			dia=dia_rango_u_valor,
+			hora=hora_rango_u_valor,
+			duración_minutos=dur_mins_rango_u_valor,
+			teléfono=tel,
+			nombre_contacto=nom_contacto,
+		)
+		return reservas
+	except ValueError as exc:
+		response.status_code = status.HTTP_400_BAD_REQUEST
+		return repr(exc)
+	finally:
+		session.close()
