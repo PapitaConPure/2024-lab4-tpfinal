@@ -1,3 +1,4 @@
+import re
 from typing import Optional, TypeVar
 from sqlalchemy import select, delete, and_
 from sqlalchemy.orm import Session as _Session, Query as _Query, Mapped as _Mapped
@@ -18,6 +19,25 @@ def qparams_a_rango(qmin: Optional[int] = None, qmax: Optional[int] = None) -> t
 		raise ValueError('El mínimo del rango no puede ser mayor que el máximo')
 
 	return (qmin, qmax)
+
+def verificar_y_normalizar_teléfono(teléfono) -> str:
+	if not isinstance(teléfono, str):
+		raise TypeError('El número de teléfono debe ser un string')
+
+	teléfono = teléfono.strip()
+
+	if len(teléfono) == 0:
+		raise ValueError('El número de teléfono no puede estar vacío')
+
+	partes = re.match(
+		pattern=r'^(?:(\+\d{1,2})\s?)?(?:(\d)\s?)?\(?(\d{3})\)?[\s.-]?(\d{3})[\s.-]?(\d{4})$',
+		string=teléfono,
+	)
+
+	if partes is None:
+		raise ValueError(f'"{teléfono}" no es un número de teléfono válido')
+
+	return ''.join(partes[i] if partes[i] is not None else '' for i in range(1, 6))
 
 T = TypeVar('T')
 def _buscar_rango_u_exacto(
@@ -90,12 +110,14 @@ def create_reserva(session: _Session,
 	if session.query(Cancha).get(reserva.id_cancha) is None:
 		raise KeyError(f'La ID de Cancha especificada para la Reserva ({reserva.id_cancha}) no existe')
 
+	teléfono = verificar_y_normalizar_teléfono(reserva.teléfono)
+
 	db_reserva = Reserva(
 		id_cancha=reserva.id_cancha,
 		dia=reserva.dia,
 		hora=reserva.hora,
 		duración_minutos=reserva.duración_minutos,
-		teléfono=reserva.teléfono,
+		teléfono=teléfono,
 		nombre_contacto=reserva.nombre_contacto,
 	)
 	session.add(db_reserva)
@@ -177,11 +199,13 @@ def get_reservas(session: _Session,
 
 	query = session.query(Reserva)
 
+	criterios = []
+
 	if id_cancha:
 		if not isinstance(id_cancha, int):
 			raise TypeError('La ID de Cancha debe ser un entero')
 
-		query = query.filter(Reserva.id_cancha == id_cancha)
+		criterios.append(Reserva.id_cancha == id_cancha)
 
 	query = _buscar_rango_u_exacto(query, columna=Reserva.dia, argumento=dia)
 	query = _buscar_rango_u_exacto(query, columna=Reserva.hora, argumento=hora)
@@ -190,7 +214,8 @@ def get_reservas(session: _Session,
 	)
 
 	if teléfono is not None:
-		query = query.filter(Reserva.teléfono == str(teléfono))
+		teléfono = verificar_y_normalizar_teléfono(teléfono)
+		criterios.append(Reserva.teléfono == str(teléfono))
 
 	if nombre_contacto is not None:
 		query = query.filter(Reserva.nombre_contacto == str(nombre_contacto))
@@ -231,6 +256,7 @@ def update_reserva(session: _Session,
 		db_reserva.duración_minutos = duración_minutos
 
 	if teléfono is not None:
+		teléfono = verificar_y_normalizar_teléfono(teléfono)
 		db_reserva.teléfono = teléfono
 
 	if nombre_contacto is not None:
@@ -349,9 +375,7 @@ def delete_reservas(session: _Session,
 	_agregar_criterio_de_rango_u_valor(criterios, columna=Reserva.duración_minutos, argumento=duración_minutos)
 
 	if teléfono is not None:
-		if not isinstance(teléfono, str) or len(teléfono) == 0:
-			raise ValueError('El criterio de teléfono debe ser un string no vacío')
-
+		teléfono = verificar_y_normalizar_teléfono(teléfono)
 		criterios.append(Reserva.teléfono == teléfono)
 
 	if nombre_contacto is not None:
