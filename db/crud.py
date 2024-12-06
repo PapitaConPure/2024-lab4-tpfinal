@@ -156,13 +156,13 @@ def get_canchas(session: _Session,
 ) -> list[Cancha]:
 	"""Devuelve una lista de objetos que representan Canchas encontradas en la BDD"""
 
-	query = session.query(Cancha)
+	criterios = []
 
 	if nombre is not None:
 		if len(nombre) == 0:
 			raise ValueError('No puedes buscar un nombre vacío')
 
-		query = query.filter(Cancha.nombre == nombre)
+		criterios.append(Cancha.nombre == nombre)
 
 	if techada is not None:
 		if not isinstance(techada, bool):
@@ -170,7 +170,12 @@ def get_canchas(session: _Session,
 				'El criterio de si la cancha está techada debe ser True, False o None'
 			)
 
-		query = query.filter(Cancha.techada == techada)
+		criterios.append(Cancha.techada == techada)
+
+	stmt = select(Cancha)
+
+	if len(criterios) > 0:
+		stmt = stmt.where(and_(*criterios))
 
 	if rango is not None:
 		if (
@@ -180,11 +185,15 @@ def get_canchas(session: _Session,
 		):
 			raise TypeError('El rango debe ser una tupla de 2 enteros')
 
-		query = query.offset(rango[0]).limit(rango[1] - rango[0])
+		stmt = (stmt
+			.order_by(Cancha.id)
+			.offset(rango[0])
+			.limit(rango[1] - rango[0])
+		)
 
-	result = query.all()
+	resultado = session.execute(stmt).scalars().all()
 
-	return result if result is not None else []
+	return list(resultado)
 
 def get_reservas(session: _Session,
 	id_cancha: Optional[int] = None,
@@ -197,8 +206,6 @@ def get_reservas(session: _Session,
 ) -> list[Reserva]:
 	"""Devuelve una lista de objetos que representan Canchas encontradas en la BDD"""
 
-	query = session.query(Reserva)
-
 	criterios = []
 
 	if id_cancha:
@@ -207,18 +214,21 @@ def get_reservas(session: _Session,
 
 		criterios.append(Reserva.id_cancha == id_cancha)
 
-	query = _buscar_rango_u_exacto(query, columna=Reserva.dia, argumento=dia)
-	query = _buscar_rango_u_exacto(query, columna=Reserva.hora, argumento=hora)
-	query = _buscar_rango_u_exacto(
-		query, columna=Reserva.duración_minutos, argumento=duración_minutos
-	)
+	_agregar_criterio_de_rango_u_valor(criterios, columna=Reserva.dia, argumento=dia)
+	_agregar_criterio_de_rango_u_valor(criterios, columna=Reserva.hora, argumento=hora)
+	_agregar_criterio_de_rango_u_valor(criterios, columna=Reserva.duración_minutos, argumento=duración_minutos)
 
 	if teléfono is not None:
 		teléfono = verificar_y_normalizar_teléfono(teléfono)
-		criterios.append(Reserva.teléfono == str(teléfono))
+		criterios.append(Reserva.teléfono == teléfono)
 
 	if nombre_contacto is not None:
-		query = query.filter(Reserva.nombre_contacto == str(nombre_contacto))
+		criterios.append(Reserva.nombre_contacto == str(nombre_contacto))
+
+	stmt = select(Reserva)
+
+	if len(criterios) > 0:
+		stmt = stmt.where(and_(*criterios))
 
 	if rango is not None:
 		if (
@@ -228,9 +238,15 @@ def get_reservas(session: _Session,
 		):
 			raise TypeError('El rango debe ser una tupla de 2 enteros')
 
-		query = query.offset(rango[0]).limit(rango[1] - rango[0])
+		stmt = (stmt
+			.order_by(Reserva.id)
+			.offset(rango[0])
+			.limit(rango[1] - rango[0])
+		)
 
-	return query.all()
+	resultado = session.execute(stmt).scalars().all()
+
+	return list(resultado)
 
 
 def update_reserva(session: _Session,
