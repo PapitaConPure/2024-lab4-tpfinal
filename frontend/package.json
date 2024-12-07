@@ -5,15 +5,24 @@
   "dependencies": {
     "axios": "^1.7.9",
     "cra-template": "1.2.0",
+    "dotenv": "^16.4.7",
+    "dotenv-webpack": "^1.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-scripts": "5.0.1"
   },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "tailwindcss": "^3.4.14"
+  },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "rc:start": "react-scripts start",
+    "rc:build": "react-scripts build",
+    "rc:test": "react-scripts test",
+    "rc:eject": "react-scripts eject",
+    "tw:build": "npx tailwindcss -i ./src/index.css -o ./src/output.css --minify",
+    "tw:watch": "npx tailwindcss -i ./src/index.css -o ./src/output.css --minify -w"
   },
   "eslintConfig": {
     "extends": [
@@ -32,8 +41,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "dotenv": "^16.4.7"
   }
 }
