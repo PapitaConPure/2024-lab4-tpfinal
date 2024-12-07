@@ -1,22 +1,26 @@
 from typing import Optional, List
 from fastapi import APIRouter, Response, status
 from db import MakeSession, crud
-from db.models import Reserva
-from db.schemas import ReservaSchema, ReservaCreate
+from db.models import Reserva, ReservaCompleta
+from db.schemas import ReservaSchema, ReservaCreate, ReservaCompletaSchema
 
 router = APIRouter(prefix='/reservas')
 
-@router.get('/', status_code=status.HTTP_200_OK, response_model = List[ReservaSchema])
-def obtener_todas_las_reservas() -> list[Reserva]:
+@router.get('/', status_code=status.HTTP_200_OK, response_model = List[ReservaSchema] | List[ReservaCompletaSchema])
+def obtener_todas_las_reservas(full: bool = False) -> list[Reserva] | list[ReservaCompleta]:
 	session = MakeSession()
-	reservas = crud.get_reservas(session)
+	reservas = crud.get_reservas(session, full=full)
 	session.close()
 	return reservas
 
-@router.get('/id/{id_reserva}', status_code=status.HTTP_200_OK, response_model = ReservaSchema | None)
-def obtener_reserva_por_id(id_reserva: int, response: Response) -> Reserva | None:
+@router.get('/id/{id_reserva}',
+	status_code=status.HTTP_200_OK,
+	response_model = ReservaSchema | ReservaCompletaSchema | None,
+)
+def obtener_reserva_por_id(id_reserva: int, response: Response, full: bool = False) -> Reserva | ReservaCompleta | None:
 	session = MakeSession()
-	reserva = crud.get_reserva(session, id_reserva)
+	reserva = crud.get_reserva(session, id_reserva) if not full else crud.get_reserva_completa(session, id_reserva)
+
 	session.close()
 
 	if reserva is None:
@@ -25,7 +29,10 @@ def obtener_reserva_por_id(id_reserva: int, response: Response) -> Reserva | Non
 
 	return reserva
 
-@router.get('/q', status_code=status.HTTP_200_OK, response_model = List[ReservaSchema] | str | None)
+@router.get('/q',
+	status_code=status.HTTP_200_OK,
+	response_model = List[ReservaSchema] | List[ReservaCompletaSchema] | str | None,
+)
 def obtener_reservas_por_consulta(
 	response: Response,
 	id_cancha: Optional[int] = None,
@@ -36,7 +43,8 @@ def obtener_reservas_por_consulta(
 	dur_mins: Optional[str] = None,
 	tel: Optional[str] = None,
 	nom_contacto: Optional[str] = None,
-) -> list[Reserva] | str | None:
+	full: bool = False,
+) -> list[Reserva] | list[ReservaCompleta] | str | None:
 	session = MakeSession()
 
 	def obtener_rango_u_valor(
@@ -80,6 +88,7 @@ def obtener_reservas_por_consulta(
 			duración_minutos=dur_mins_rango_u_valor,
 			teléfono=tel,
 			nombre_contacto=nom_contacto,
+			full=full,
 		)
 		return reservas
 	except ValueError as exc:

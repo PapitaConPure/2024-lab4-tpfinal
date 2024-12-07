@@ -2,7 +2,7 @@ import re
 from typing import Optional, TypeVar
 from sqlalchemy import select, delete, and_
 from sqlalchemy.orm import Session as _Session, Query as _Query, Mapped as _Mapped
-from .models import Cancha, Reserva
+from .models import Cancha, Reserva, ReservaCompleta
 from .schemas import CanchaCreate, ReservaCreate
 
 def qparams_a_rango(qmin: Optional[int] = None, qmax: Optional[int] = None) -> tuple[int, int] | None:
@@ -137,17 +137,53 @@ def get_reserva(session: _Session,
 	id_cancha: Optional[int] = None,
 ) -> Reserva | None:
 	"""Busca una Reserva en la BDD con la ID especificada y la devuelve"""
+
+	query = session.query(Reserva)
+
 	if id_reserva is not None:
-		return session.query(Reserva).get(id_reserva)
+		return query.get(id_reserva)
 
 	if id_cancha is not None:
 		return (
-			session.query(Reserva)
+			query
 			.filter(Reserva.id_cancha == id_cancha)
 			.first()
 		)
 
 	raise TypeError('Se esperaba o una ID de reserva o una ID de cancha')
+
+def get_reserva_completa(session: _Session,
+	id_reserva: Optional[int] = None,
+	id_cancha: Optional[int] = None,
+) -> ReservaCompleta | None:
+	"""Busca una Reserva en la BDD con la ID especificada y la devuelve"""
+
+	query = session.query(Reserva, Cancha)
+	resultado = None
+
+	if id_reserva is not None:
+		resultado = (
+			query
+			.filter(Reserva.id == id_reserva)
+			.join(Cancha, Reserva.id_cancha == Cancha.id)
+			.first()
+		)
+	elif id_cancha is not None:
+		resultado = (
+			query
+			.filter(Reserva.id_cancha == id_cancha)
+			.join(Cancha, Reserva.id_cancha == Cancha.id)
+			.first()
+		)
+	else:
+		raise TypeError('Se esperaba o una ID de reserva o una ID de cancha')
+
+	if resultado is None:
+		return None
+
+	reserva, cancha = resultado
+
+	return ReservaCompleta(reserva=reserva, cancha=cancha)
 
 def get_canchas(session: _Session,
 	rango: Optional[tuple[int, int]] = None,
@@ -203,7 +239,8 @@ def get_reservas(session: _Session,
 	duración_minutos: Optional[int | tuple[int, int]] = None,
 	teléfono: Optional[str] = None,
 	nombre_contacto: Optional[str] = None,
-) -> list[Reserva]:
+	full: bool = False,
+) -> list[Reserva] | list[ReservaCompleta]:
 	"""Devuelve una lista de objetos que representan Canchas encontradas en la BDD"""
 
 	criterios = []
@@ -225,7 +262,10 @@ def get_reservas(session: _Session,
 	if nombre_contacto is not None:
 		criterios.append(Reserva.nombre_contacto == str(nombre_contacto))
 
-	stmt = select(Reserva)
+	stmt = select(Reserva) if not full else (
+		select(Reserva, Cancha)
+		.join(Reserva.cancha)
+	)
 
 	if len(criterios) > 0:
 		stmt = stmt.where(and_(*criterios))
@@ -244,8 +284,12 @@ def get_reservas(session: _Session,
 			.limit(rango[1] - rango[0])
 		)
 
-	resultado = session.execute(stmt).scalars().all()
 
+	if full:
+		resultado = session.execute(stmt).fetchall()
+		return [ReservaCompleta(reserva=reserva, cancha=cancha) for reserva, cancha in resultado]
+
+	resultado = session.execute(stmt).scalars().all()
 	return list(resultado)
 
 

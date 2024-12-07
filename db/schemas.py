@@ -25,3 +25,7 @@ class ReservaCreate(ReservaBase):
 class ReservaSchema(ReservaBase):
 	id: int
 	model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
+
+class ReservaCompletaSchema(BaseModel):
+	reserva: ReservaSchema
+	cancha: CanchaSchema

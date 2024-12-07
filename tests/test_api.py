@@ -163,7 +163,15 @@ class TestAPICanchas(TestCase):
 class TestAPIReservas(TestCase):
 	"""Tests de los endpoints para Reservas"""
 	@classmethod
-	def verificar_reserva(cls, self, reserva):
+	def verificar_reserva(cls, self, data):
+		reserva = None
+		cancha = None
+		if 'reserva' in data and 'cancha' in data:
+			reserva = data['reserva']
+			cancha = data['cancha']
+		else:
+			reserva = data
+
 		cls.assertIsNotNone(self, reserva['id'])
 		cls.assertIsNotNone(self, reserva['dia'])
 		cls.assertIsNotNone(self, reserva['hora'])
@@ -180,6 +188,11 @@ class TestAPIReservas(TestCase):
 
 		if reserva['nombre_contacto'] is not None:
 			cls.assertEqual(self, type(reserva['nombre_contacto']), str)
+
+		if cancha is not None:
+			cls.assertEqual(self, type(cancha['id']), int)
+			cls.assertEqual(self, type(cancha['nombre']), str)
+			cls.assertEqual(self, type(cancha['techada']), bool)
 
 	def test_get(self):
 		response = client.get('/reservas')
@@ -199,6 +212,18 @@ class TestAPIReservas(TestCase):
 		response.close()
 
 		TestAPIReservas.verificar_reserva(self, data)
+
+	def test_id_completo(self):
+		response = client.get('/reservas/id/174?full=1')
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		data = response.json()
+		response.close()
+
+		TestAPIReservas.verificar_reserva(self, data)
+		self.assertIsNotNone(data['cancha'])
+		self.assertIsNotNone(data['cancha']['id'])
+		self.assertIsNotNone(data['cancha']['nombre'])
+		self.assertIsNotNone(data['cancha']['techada'])
 
 	def test_get_query(self):
 		response = client.get('/reservas/q?qmax=5&id_cancha=200')
@@ -267,17 +292,18 @@ class TestAPIReservas(TestCase):
 
 		for i, response in enumerate(responses):
 			self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-			data = response.json()
+			reserve = response.json()
 			response.close()
+			equality = equalities[i]
 
-			self.assertEqual(data['id_cancha'], equalities[i]['id_cancha'])
-			self.assertEqual(data['dia'], equalities[i]['dia'])
-			self.assertEqual(data['hora'], equalities[i]['hora'])
-			self.assertEqual(data['duración_minutos'], equalities[i]['duración_minutos'])
-			self.assertEqual(data['teléfono'], equalities[i]['teléfono'])
-			self.assertEqual(data['nombre_contacto'], equalities[i]['nombre_contacto'])
+			self.assertEqual(reserve['id_cancha'], equality['id_cancha'])
+			self.assertEqual(reserve['dia'], equality['dia'])
+			self.assertEqual(reserve['hora'], equality['hora'])
+			self.assertEqual(reserve['duración_minutos'], equality['duración_minutos'])
+			self.assertEqual(reserve['teléfono'], equality['teléfono'])
+			self.assertEqual(reserve['nombre_contacto'], equality['nombre_contacto'])
 
-			client.delete(f'reservas/id/{data['id']}').close()
+			client.delete(f'reservas/id/{reserve['id']}').close()
 
 		client.delete(f'canchas/id/{idc}').close()
 

@@ -12,7 +12,7 @@ class Cancha(Base):
 	nombre: Mapped[str] = mapped_column(String(40))
 	techada: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-	reservas: Mapped[List['Reserva']] = relationship(backref='cancha')
+	reservas: Mapped[List['Reserva']] = relationship('Reserva', back_populates='cancha')
 
 class Reserva(Base):
 	__tablename__ = 'reservas'
@@ -23,4 +23,13 @@ class Reserva(Base):
 	duración_minutos: Mapped[int] = mapped_column(Integer, nullable=False)
 	teléfono: Mapped[str] = mapped_column(String, nullable=False)
 	nombre_contacto: Mapped[str] = mapped_column(String, nullable=False)
-	id_cancha: Mapped[int] = mapped_column(Integer, ForeignKey('canchas.id'), nullable=False)
+	id_cancha: Mapped[int] = mapped_column(ForeignKey('canchas.id'), nullable=False)
+
+	cancha: Mapped['Cancha'] = relationship('Cancha', back_populates='reservas')
+
+class ReservaCompleta:
+	reserva: Reserva
+	cancha: Cancha
+	def __init__(self, reserva: Reserva, cancha: Cancha):
+		self.reserva = reserva
+		self.cancha = cancha
