@@ -20,6 +20,14 @@ def qparams_a_rango(qmin: Optional[int] = None, qmax: Optional[int] = None) -> t
 
 	return (qmin, qmax)
 
+def verificar_horario_reserva(
+	dia: Optional[int] = None,
+	hora: Optional[int] = None,
+	duración_minutos: Optional[int] = None,
+):
+	#TODO: Implementar
+	pass
+
 def verificar_y_normalizar_teléfono(teléfono) -> str:
 	if not isinstance(teléfono, str):
 		raise TypeError('El número de teléfono debe ser un string')
@@ -106,6 +114,8 @@ def create_reserva(session: _Session,
 	reserva: ReservaCreate,
 ) -> Reserva:
 	"""Crea una nueva Reserva en la BDD y devuelve el objeto que la representa"""
+
+	verificar_horario_reserva(dia=reserva.dia, hora=reserva.hora, duración_minutos=reserva.duración_minutos)
 
 	if session.query(Cancha).get(reserva.id_cancha) is None:
 		raise KeyError(f'La ID de Cancha especificada para la Reserva ({reserva.id_cancha}) no existe')
@@ -305,6 +315,9 @@ def update_reserva(session: _Session,
 
 	if db_reserva is None:
 		return None
+
+
+	verificar_horario_reserva(dia=dia, hora=hora, duración_minutos=duración_minutos)
 
 	if dia is not None:
 		db_reserva.dia = dia
