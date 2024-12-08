@@ -75,7 +75,6 @@ module.exports = {
       },     
 			fontFamily: {
 				'default-sans': '"Outfit", ui-sans-serif, system-ui, sans-serif',
-				'code': '"Fira Code", monospace, ui-sans-serif system-ui sans-serif',
 			},
     },
   },
