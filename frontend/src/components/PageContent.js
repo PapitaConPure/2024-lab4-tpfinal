@@ -12,7 +12,7 @@ export function PageContent({ children }) {
 	const toggleTheme = () => {
 		const next = theme === 'light' ? 'dark' : 'light';
 		localStorage.setItem('theme', next);
-		setTheme(current => next);
+		setTheme(next);
 	};
 
 	return (
