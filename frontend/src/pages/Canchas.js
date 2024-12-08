@@ -3,13 +3,13 @@ import { PageContent } from '../components/PageContent';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-export default function Home() {
+export default function Canchas() {
 	return (
 		<PageContent>
-			<Header selectedPageName='Home' />
+			<Header selectedPageName='Canchas' />
 
 			<Main>
-				Un poquito de contenido
+				Acá irían las cosas de canchas.
 			</Main>
 
 			<Footer />
