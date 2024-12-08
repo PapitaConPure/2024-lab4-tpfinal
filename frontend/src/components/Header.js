@@ -19,7 +19,7 @@ export default function Header(props) {
 
 	return (
 		<div className="mb-4 flex flex-row items-center justify-between border-b border-solid border-background-200 px-4 py-2 dark:border-background-800">
-			<h1 className="text-2xl font-black">TUP Lab4 TP Final</h1>
+			<h1 className="text-2xl font-black">Paddler</h1>
 
 			<nav className="flex flex-row space-x-4">
 				{[
