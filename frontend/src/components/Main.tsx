@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface MainProps {
-  children: any;
+  children?: React.ReactNode;
 }
 
 export default function Main({ children }: MainProps) {
