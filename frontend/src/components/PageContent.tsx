@@ -5,7 +5,7 @@ type Theme = 'light' | 'dark';
 const ThemeContext: React.Context<{ theme: Theme, toggleTheme: () => void }> = createContext({ theme: 'dark' as Theme, toggleTheme: () => {} });
 
 interface PageContentProps {
-	children: any;
+	children: React.ReactNode;
 }
 
 export function PageContent({ children }: PageContentProps) {
