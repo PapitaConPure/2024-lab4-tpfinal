@@ -1,3 +1,4 @@
+from datetime import date
 from pydantic import BaseModel, ConfigDict
 
 class CanchaBase(BaseModel):
@@ -13,7 +14,7 @@ class CanchaSchema(CanchaBase):
 
 class ReservaBase(BaseModel):
 	id_cancha: int
-	dia: int
+	dia: date
 	hora: int
 	duración_minutos: int
 	teléfono: str

@@ -1,6 +1,8 @@
+from datetime import date
 from typing import List
-from sqlalchemy import Integer, SmallInteger, String, Boolean, ForeignKey
+from sqlalchemy import Integer, SmallInteger, String, Boolean, Date, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from . import engine
 
 class Base(DeclarativeBase):
 	pass
@@ -18,7 +20,7 @@ class Reserva(Base):
 	__tablename__ = 'reservas'
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True)
-	dia: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+	dia: Mapped[date] = mapped_column(Date, nullable=False)
 	hora: Mapped[int] = mapped_column(SmallInteger, nullable=False)
 	duración_minutos: Mapped[int] = mapped_column(Integer, nullable=False)
 	teléfono: Mapped[str] = mapped_column(String, nullable=False)
@@ -33,3 +35,5 @@ class ReservaCompleta:
 	def __init__(self, reserva: Reserva, cancha: Cancha):
 		self.reserva = reserva
 		self.cancha = cancha
+
+Base.metadata.create_all(engine)

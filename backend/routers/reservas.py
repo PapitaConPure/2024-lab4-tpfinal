@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from typing import Optional, List
 from fastapi import APIRouter, Response, status
 from db import MakeSession, crud
@@ -5,6 +6,58 @@ from db.models import Reserva, ReservaCompleta
 from db.schemas import ReservaSchema, ReservaCreate, ReservaCompletaSchema
 
 router = APIRouter(prefix='/reservas')
+
+def obtener_rango_u_valor_int(
+	x: str | None,
+	nom_criterio: str='<<criterio desconocido>>',
+) -> int | tuple[int, int] | None:
+	if x is None:
+		return None
+
+	mensaje_error_formato = f'El criterio de búsqueda según {nom_criterio} ({x=})'\
+		' debe expresarse como un entero o un rango bajo el formato "min:max"'
+
+	try:
+		if ':' not in x:
+			return int(x)
+
+		partes = x.split(':')
+
+		if len(partes) != 2:
+			raise ValueError(mensaje_error_formato)
+
+		return (
+			int(partes[0]) if len(partes[0]) > 0 else 0,
+			int(partes[1]) if len(partes[1]) > 0 else 2**53 - 1,
+		)
+	except ValueError as exc:
+		raise ValueError(mensaje_error_formato) from exc
+
+def obtener_rango_u_valor_date(
+	x: str | None,
+	nom_criterio: str='<<criterio desconocido>>',
+) -> date | tuple[date, date] | None:
+	if x is None:
+		return None
+
+	mensaje_error_formato = f'El criterio de búsqueda según {nom_criterio} ({x=})'\
+		' debe expresarse como un entero o un rango bajo el formato "min:max"'
+
+	try:
+		if ':' not in x:
+			return datetime.fromisoformat(x)
+
+		partes = x.split(':')
+
+		if len(partes) != 2:
+			raise ValueError(mensaje_error_formato)
+
+		return (
+			datetime.fromisoformat(partes[0]) if len(partes[0]) > 0 else datetime.min,
+			datetime.fromisoformat(partes[1]) if len(partes[1]) > 0 else datetime.max,
+		)
+	except ValueError as exc:
+		raise ValueError(mensaje_error_formato) from exc
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model = List[ReservaSchema] | List[ReservaCompletaSchema])
 def obtener_todas_las_reservas(full: bool = False) -> list[Reserva] | list[ReservaCompleta]:
@@ -47,37 +100,11 @@ def obtener_reservas_por_consulta(
 ) -> list[Reserva] | list[ReservaCompleta] | str | None:
 	session = MakeSession()
 
-	def obtener_rango_u_valor(
-		x: str | None,
-		nom_criterio: str='<<criterio desconocido>>',
-	) -> int | tuple[int, int] | None:
-		if x is None:
-			return None
-
-		mensaje_error_formato = f'El criterio de búsqueda según {nom_criterio} ({x=})'\
-			' debe expresarse como un entero o un rango bajo el formato "min:max"'
-
-		try:
-			if ':' not in x:
-				return int(x)
-
-			partes = x.split(':')
-
-			if len(partes) != 2:
-				raise ValueError(mensaje_error_formato)
-
-			return (
-				int(partes[0]) if len(partes[0]) > 0 else 0,
-				int(partes[1]) if len(partes[1]) > 0 else 2**53 - 1,
-			)
-		except ValueError as exc:
-			raise ValueError(mensaje_error_formato) from exc
-
 	try:
 		rango = crud.qparams_a_rango(qmin, qmax)
-		dia_rango_u_valor = obtener_rango_u_valor(dia, 'día')
-		hora_rango_u_valor = obtener_rango_u_valor(hora, 'hora')
-		dur_mins_rango_u_valor = obtener_rango_u_valor(dur_mins, 'duración en minutos')
+		dia_rango_u_valor = obtener_rango_u_valor_date(dia, 'día')
+		hora_rango_u_valor = obtener_rango_u_valor_int(hora, 'hora')
+		dur_mins_rango_u_valor = obtener_rango_u_valor_int(dur_mins, 'duración en minutos')
 
 		reservas = crud.get_reservas(
 			session,
@@ -101,7 +128,7 @@ def obtener_reservas_por_consulta(
 def crear_reserva(
 	id_cancha: int,
 	response: Response,
-	dia: int,
+	dia: date,
 	hora: int,
 	dur_mins: int,
 	tel: str,
@@ -137,7 +164,7 @@ def crear_reserva(
 def modificar_reserva(
 	id_reserva: int,
 	response: Response,
-	dia: Optional[int],
+	dia: Optional[date],
 	hora: Optional[int],
 	dur_mins: Optional[int],
 	tel: Optional[str],
@@ -202,37 +229,11 @@ def quitar_reservas_por_consulta(
 ) -> list[Reserva] | str | None:
 	session = MakeSession()
 
-	def obtener_rango_u_valor(
-		x: str | None,
-		nom_criterio: str='<<criterio desconocido>>',
-	) -> int | tuple[int, int] | None:
-		if x is None:
-			return None
-
-		mensaje_error_formato = f'El criterio de búsqueda según {nom_criterio} ({x=})'\
-			' debe expresarse como un entero o un rango bajo el formato "min:max"'
-
-		try:
-			if ':' not in x:
-				return int(x)
-
-			partes = x.split(':')
-
-			if len(partes) != 2:
-				raise ValueError(mensaje_error_formato)
-
-			return (
-				int(partes[0]) if len(partes[0]) > 0 else 0,
-				int(partes[1]) if len(partes[1]) > 0 else 2**53 - 1,
-			)
-		except ValueError as exc:
-			raise ValueError(mensaje_error_formato) from exc
-
 	try:
 		rango = crud.qparams_a_rango(qmin, qmax)
-		dia_rango_u_valor = obtener_rango_u_valor(dia, 'día')
-		hora_rango_u_valor = obtener_rango_u_valor(hora, 'hora')
-		dur_mins_rango_u_valor = obtener_rango_u_valor(dur_mins, 'duración en minutos')
+		dia_rango_u_valor = obtener_rango_u_valor_date(dia, 'día')
+		hora_rango_u_valor = obtener_rango_u_valor_int(hora, 'hora')
+		dur_mins_rango_u_valor = obtener_rango_u_valor_int(dur_mins, 'duración en minutos')
 
 		reservas = crud.delete_reservas(
 			session,
