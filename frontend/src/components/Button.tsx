@@ -4,11 +4,11 @@ import React from 'react';
 type ButtonKind = 'primary' | 'secondary' | 'success' | 'danger';
 
 interface ButtonProps {
-	children: string;
+	children?: string;
 	kind?: ButtonKind;
 	stretched?: boolean;
 	disabled?: boolean;
-	onClick?: () => {};
+	onClick?: () => void;
 	className?: string;
 	icon?: import('@fortawesome/fontawesome-svg-core').IconDefinition;
 }
@@ -24,7 +24,7 @@ export default function Button(props: ButtonProps) {
 		icon = null,
 	} = props;
 
-	const baseStyles = `${stretched && 'w-full'} px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all`;
+	const baseStyles = `${stretched && 'w-full'} px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center gap-2 transition-all`;
 	const variantsStyles: { [K in ButtonKind]: string } = {
 		primary:
 			'bg-primary-600 text-text-950 hover:bg-primary-500 active:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 dark:active:bg-primary-700',
