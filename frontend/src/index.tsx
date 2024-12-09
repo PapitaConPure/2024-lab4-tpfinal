@@ -6,7 +6,12 @@ import Home from './pages/Home';
 import Canchas from './pages/Canchas';
 import Reservas from './pages/Reservas';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const rootElem = document.getElementById('root');
+
+if(!rootElem)
+  throw new ReferenceError('Debe existir un elemento con id #root en el index.html de la app');
+
+const root = ReactDOM.createRoot(rootElem);
 root.render(
   <BrowserRouter>
     <Routes>

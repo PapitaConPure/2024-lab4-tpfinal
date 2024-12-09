@@ -1,12 +1,16 @@
 import React, { createContext, useState, useContext } from 'react';
 
-/**@typedef {'light' | 'dark'} Theme*/
+type Theme = 'light' | 'dark';
 
-const ThemeContext = createContext(true);
+const ThemeContext: React.Context<{ theme: Theme, toggleTheme: () => void }> = createContext({ theme: 'dark' as Theme, toggleTheme: () => {} });
 
-export function PageContent({ children }) {
-	const [ theme, setTheme ] = useState(
-		localStorage.getItem('theme') ?? 'dark'
+interface PageContentProps {
+	children: any;
+}
+
+export function PageContent({ children }: PageContentProps) {
+	const [ theme, setTheme ] = useState<Theme>(
+		(localStorage.getItem('theme') as Theme) ?? 'dark'
 	);
 
 	const toggleTheme = () => {
@@ -28,10 +32,6 @@ export function PageContent({ children }) {
 	);
 }
 
-/**
- * 
- * @returns {{ theme: string, toggleTheme: () => void }}
- */
 export function useTheme() {
 	return useContext(ThemeContext);
 }

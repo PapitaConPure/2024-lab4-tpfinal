@@ -4,22 +4,21 @@ import { faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from './PageContent';
 import { NavLink } from 'react-router';
 
-/**
- * @typedef {'Home' | 'Canchas' | 'Reservas'} SelectedPageName
- */
+type SelectedPageName =
+	| 'Home'
+	| 'Canchas'
+	| 'Reservas';
 
-/**
- * @typedef {Object} HeaderOptions
- * @prop {SelectedPageName} selectedPageName
- * @param {HeaderOptions} props
- */
-export default function Header(props) {
-	const { selectedPageName } = props;
+interface HeaderOptions {
+	selectedPageName: SelectedPageName;
+}
+
+export default function Header({ selectedPageName }: HeaderOptions) {
 	const { theme, toggleTheme } = useTheme();
 
 	return (
 		<div className="mb-4 flex flex-row items-center justify-between border-b border-solid border-background-200 px-4 py-2 dark:border-background-800">
-			<h1 className="text-2xl font-black">Paddler</h1>
+			<h1>Paddler</h1>
 
 			<nav className="flex flex-row space-x-4">
 				{[
@@ -43,7 +42,7 @@ export default function Header(props) {
 
 				<button
 					onClick={toggleTheme}
-					className="h-9 w-9 rounded-md bg-secondary-900 text-text-50 dark:bg-secondary-100 dark:text-text-950"
+					className="h-9 w-9 rounded-md bg-secondary-900 text-text-50 hover:bg-secondary-800 active:bg-secondary-700 dark:bg-secondary-100 dark:text-text-950 dark:hover:bg-secondary-50 dark:active:bg-secondary-200"
 				>
 					{(theme === 'light') ? (
 						<FontAwesomeIcon icon={faMoon} />

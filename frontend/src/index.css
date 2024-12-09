@@ -3,6 +3,18 @@
 @tailwind utilities;
 
 @layer base {
+	h1 {
+		@apply text-3xl font-black;
+	}
+
+	h2 {
+		@apply text-2xl font-extrabold;
+	}
+
+	h3 {
+		@apply text-xl font-bold;
+	}
+
 	a:hover {
 		@apply underline;
 	}

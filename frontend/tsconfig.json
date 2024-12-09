@@ -1,0 +1,26 @@
+{
+	"compilerOptions": {
+		"target": "es2015",
+		"module": "preserve",
+		"moduleDetection": "force",
+		"moduleResolution": "bundler",
+		"esModuleInterop": true,
+		"isolatedModules": true,
+		"resolveJsonModule": true,
+		"verbatimModuleSyntax": true,
+
+		"allowJs": true,
+		"allowSyntheticDefaultImports": true,
+
+		"jsx": "react-jsx",
+		"noEmit": true,
+		"skipLibCheck": true,
+
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+
+		"lib": ["dom", "dom.iterable", "esnext"]
+	},
+	"include": [ "src/**/*" ]
+}
