@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
 from db import MakeSession, crud
 from db.models import Reserva, ReservaCompleta
 from db.schemas import ReservaSchema, ReservaCreate, ReservaCompletaSchema
@@ -171,6 +171,7 @@ def crear_reserva(
 @router.patch('/id/{id_reserva}', status_code=status.HTTP_200_OK, response_model = ReservaSchema)
 def modificar_reserva(
 	id_reserva: int,
+	response: Response,
 	dia: Optional[date],
 	hora: Optional[int],
 	dur_mins: Optional[int],
@@ -187,6 +188,10 @@ def modificar_reserva(
 			status.HTTP_404_NOT_FOUND,
 			f'No se encontró ninguna reserva con la ID: {id_reserva}'
 		)
+
+	if dia is None and hora is None and dur_mins is None and tel is None and nom_contacto is None:
+		response.status_code = status.HTTP_304_NOT_MODIFIED
+		return reserva
 
 	try:
 		if dia is not None:

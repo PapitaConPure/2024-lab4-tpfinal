@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
 from db import MakeSession, crud
 from db.models import Cancha
 from db.schemas import CanchaSchema, CanchaCreate
@@ -64,6 +64,7 @@ def crear_cancha(
 @router.patch('/id/{id_cancha}', status_code = status.HTTP_200_OK, response_model = CanchaSchema)
 def modificar_cancha(
 	id_cancha: int,
+	response: Response,
 	nombre: Optional[str] = None,
 	techada: Optional[bool] = None,
 ) -> Cancha:
@@ -76,6 +77,10 @@ def modificar_cancha(
 			status.HTTP_404_NOT_FOUND,
 			f'No se encontró ninguna cancha con la ID: {id_cancha}',
 		)
+
+	if nombre is None and techada is None:
+		response.status_code = status.HTTP_304_NOT_MODIFIED
+		return cancha
 
 	try:
 		if nombre is not None:
