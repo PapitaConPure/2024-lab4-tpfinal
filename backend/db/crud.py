@@ -46,32 +46,32 @@ def verificar_horario_reserva(
 	if not isinstance(duración_minutos, int) or duración_minutos <= 0 or duración_minutos >= dia_entero_minutos:
 		raise ValueError('La duración en minutos debe ser un número positivo y no puede ser un día entero o más')
 
-	minuto: int = 60 * hora
-	minuto_fin: int = minuto + duración_minutos
-	dia_siguiente: date = dia + timedelta(days=1)
-	termina_mismo_dia: bool = minuto_fin < dia_entero_minutos
+	minuto_inicio = 60 * hora
+	minuto_fin = minuto_inicio + duración_minutos
+	dia_siguiente = dia + timedelta(days=1)
+
+	termina_mismo_dia = minuto_fin < dia_entero_minutos
 
 	conflicto_mismo_dia = and_(
 		Reserva.dia == dia,
 		(60 * Reserva.hora) < minuto_fin,
-		(60 * Reserva.hora + Reserva.duración_minutos) > minuto,
+		(60 * Reserva.hora + Reserva.duración_minutos) > minuto_inicio,
 	)
 	conflicto_entre_dias = and_(
 		Reserva.dia == dia_siguiente,
 		Reserva.hora < minuto_fin - dia_entero_minutos,
-		(60 * Reserva.hora + Reserva.duración_minutos) > minuto - dia_entero_minutos,
+		(60 * Reserva.hora + Reserva.duración_minutos) > minuto_inicio - dia_entero_minutos,
 	)
 
 	stmt = (
 		select(Reserva)
 		.filter(Reserva.id_cancha == id_cancha)
-		.filter(
-			conflicto_mismo_dia if termina_mismo_dia else or_(
-				conflicto_mismo_dia,
-				conflicto_entre_dias,
-			),
-		)
 	)
+
+	if termina_mismo_dia:
+		stmt = stmt.filter(conflicto_mismo_dia)
+	else:
+		stmt = stmt.filter(or_(conflicto_mismo_dia, conflicto_entre_dias))
 
 	if id_reserva is not None:
 		stmt = stmt.filter(Reserva.id != id_reserva)
