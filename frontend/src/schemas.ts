@@ -25,11 +25,20 @@ export type ReservaCompletaSchema = {
 }
 
 export type HTTPValidationError = {
-	detail: string,
+	detail: Array<{
+		type: string,
+		loc: [ string | number ],
+		msg: string,
+		input: string,
+	}>,
 }
 
 export type ValidationError = {
-	loc: [ string, number ],
+	loc: Array<string | number>,
 	msg: string,
 	type: string,
+}
+
+export type HTTPException = {
+	detail: string,
 }
