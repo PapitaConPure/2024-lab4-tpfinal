@@ -1,7 +1,7 @@
 import re
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
-from sqlalchemy import select, delete, and_
+from sqlalchemy import select, delete, and_, or_
 from sqlalchemy.orm import Session as _Session, Mapped as _Mapped
 from .models import Cancha, Reserva, ReservaCompleta
 from .schemas import CanchaCreate, ReservaCreate
@@ -29,27 +29,50 @@ def verificar_horario_reserva(
 	duración_minutos: int,
 	id_reserva: Optional[int] = None,
 ):
-	if not session.query(Cancha).get(id_cancha):
+	if not isinstance(id_cancha, int):
+		raise ValueError('Debe especificar el la ID de la cancha que se reserva')
+
+	if not isinstance(dia, date):
+		raise ValueError('Debe especificar el día de la reserva')
+
+	if session.query(Cancha).get(id_cancha) is None:
 		raise ReferenceError('La ID de cancha especificada no existe')
 
-	if id_cancha is None or dia is None or hora is None or duración_minutos is None:
-		raise ValueError('Debe especificar el día, la hora y duración en minutos')
+	if not isinstance(hora, int) or hora < 0 or hora >= 24:
+		raise ValueError('La hora de reserva debe seguir el formato de 24 horas (0 <= x < 24)')
 
-	if hora < 0 or hora > 24:
-		raise ValueError('La hora de reserva debe seguir el formato de 24 horas (0 <= x <= 24)')
+	dia_entero_minutos: int = 60 * 24
 
-	if duración_minutos <= 0:
-		raise ValueError('La duración en minutos debe ser un número positivo')
+	if not isinstance(duración_minutos, int) or duración_minutos <= 0 or duración_minutos >= dia_entero_minutos:
+		raise ValueError('La duración en minutos debe ser un número positivo y no puede ser un día entero o más')
+
+	minuto: int = 60 * hora
+	minuto_fin: int = minuto + duración_minutos
+	dia_siguiente: date = dia + timedelta(days=1)
+	termina_mismo_dia: bool = minuto_fin < dia_entero_minutos
+
+	conflicto_mismo_dia = and_(
+		Reserva.dia == dia,
+		(60 * Reserva.hora) < minuto_fin,
+		(60 * Reserva.hora + Reserva.duración_minutos) > minuto,
+	)
+	conflicto_entre_dias = and_(
+		Reserva.dia == dia_siguiente,
+		Reserva.hora < minuto_fin - dia_entero_minutos,
+		(60 * Reserva.hora + Reserva.duración_minutos) > minuto - dia_entero_minutos,
+	)
 
 	stmt = (
 		select(Reserva)
-		.filter(and_(
-			Reserva.id_cancha == id_cancha,
-			Reserva.dia == dia,
-			Reserva.hora < (hora + duración_minutos),
-			(Reserva.hora + Reserva.duración_minutos) > hora,
-		))
+		.filter(Reserva.id_cancha == id_cancha)
+		.filter(
+			conflicto_mismo_dia if termina_mismo_dia else or_(
+				conflicto_mismo_dia,
+				conflicto_entre_dias,
+			),
+		)
 	)
+
 	if id_reserva is not None:
 		stmt = stmt.filter(Reserva.id != id_reserva)
 
