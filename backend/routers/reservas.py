@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, status
 from db import MakeSession, crud
 from db.models import Reserva, ReservaCompleta
 from db.schemas import ReservaSchema, ReservaCreate, ReservaCompletaSchema
@@ -171,12 +171,11 @@ def crear_reserva(
 @router.patch('/id/{id_reserva}', status_code=status.HTTP_200_OK, response_model = ReservaSchema)
 def modificar_reserva(
 	id_reserva: int,
-	response: Response,
-	dia: Optional[date],
-	hora: Optional[int],
-	dur_mins: Optional[int],
-	tel: Optional[str],
-	nom_contacto: Optional[str],
+	dia: Optional[date] = None,
+	hora: Optional[int] = None,
+	dur_mins: Optional[int] = None,
+	tel: Optional[str] = None,
+	nom_contacto: Optional[str] = None,
 ) -> Reserva:
 	session = MakeSession()
 
@@ -190,8 +189,10 @@ def modificar_reserva(
 		)
 
 	if dia is None and hora is None and dur_mins is None and tel is None and nom_contacto is None:
-		response.status_code = status.HTTP_304_NOT_MODIFIED
-		return reserva
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'No se instruyó ninguna modificación',
+		)
 
 	try:
 		if dia is not None:
