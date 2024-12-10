@@ -1,6 +1,7 @@
 import re
 from datetime import date, timedelta
 from typing import Optional
+from fastapi import HTTPException, status
 from sqlalchemy import select, delete, and_, or_
 from sqlalchemy.orm import Session as _Session, Mapped as _Mapped
 from .models import Cancha, Reserva, ReservaCompleta
@@ -17,7 +18,10 @@ def qparams_a_rango(qmin: Optional[int] = None, qmax: Optional[int] = None) -> t
 		qmax = 2**53 - 1
 
 	if qmin > qmax:
-		raise ValueError('El mínimo del rango no puede ser mayor que el máximo')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'El mínimo del rango no puede ser mayor que el máximo',
+		)
 
 	return (qmin, qmax)
 
@@ -30,21 +34,36 @@ def verificar_horario_reserva(
 	id_reserva: Optional[int] = None,
 ):
 	if not isinstance(id_cancha, int):
-		raise ValueError('Debe especificar el la ID de la cancha que se reserva')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'Debes especificar el la ID de la cancha que se reserva como un entero',
+		)
 
 	if not isinstance(dia, date):
-		raise ValueError('Debe especificar el día de la reserva')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'Debes especificar el día de la reserva como un entero',
+		)
 
 	if session.query(Cancha).get(id_cancha) is None:
-		raise ReferenceError('La ID de cancha especificada no existe')
+		raise HTTPException(
+			status.HTTP_404_NOT_FOUND,
+			'La ID de cancha especificada no existe',
+		)
 
 	if not isinstance(hora, int) or hora < 0 or hora >= 24:
-		raise ValueError('La hora de reserva debe seguir el formato de 24 horas (0 <= x < 24)')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'La hora de reserva debe seguir el formato de 24 horas (0 <= x < 24)',
+		)
 
 	dia_entero_minutos: int = 60 * 24
 
 	if not isinstance(duración_minutos, int) or duración_minutos <= 0 or duración_minutos >= dia_entero_minutos:
-		raise ValueError('La duración en minutos debe ser un número positivo y no puede ser un día entero o más')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'La duración en minutos debe ser un número positivo y no puede ser un día entero o más',
+		)
 
 	minuto_inicio = 60 * hora
 	minuto_fin = minuto_inicio + duración_minutos
@@ -79,16 +98,25 @@ def verificar_horario_reserva(
 	conflictos = list(session.execute(stmt).scalars().all())
 
 	if len(conflictos) > 0:
-		raise ValueError('Registrar esta reserva haría que 2 reservas se solapen temporalmente')
+		raise HTTPException(
+			status.HTTP_409_CONFLICT,
+			'Registrar esta reserva haría que 2 reservas se solapen temporalmente',
+		)
 
 def verificar_y_normalizar_teléfono(teléfono) -> str:
 	if not isinstance(teléfono, str):
-		raise TypeError('El número de teléfono debe ser un string')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'El número de teléfono debe ser un string',
+		)
 
 	teléfono = teléfono.strip()
 
 	if len(teléfono) == 0:
-		raise ValueError('El número de teléfono no puede estar vacío')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'El número de teléfono debe ser un string y no puede estar vacío',
+		)
 
 	partes = re.match(
 		pattern=r'^(?:(\+\d{1,2})\s?)?(?:(\d)\s?)?\(?(\d{3})\)?[\s.-]?(\d{3})[\s.-]?(\d{4})$',
@@ -96,7 +124,10 @@ def verificar_y_normalizar_teléfono(teléfono) -> str:
 	)
 
 	if partes is None:
-		raise ValueError(f'"{teléfono}" no es un número de teléfono válido')
+		raise HTTPException(
+			status.HTTP_422_UNPROCESSABLE_ENTITY,
+			f'"{teléfono}" no es un número de teléfono válido. Debe seguir la forma "(+XX)? (X)? XXX XXX-XXXX" o similares',
+		)
 
 	return ''.join(partes[i] if partes[i] is not None else '' for i in range(1, 6))
 
@@ -111,12 +142,18 @@ def _agregar_criterio_de_rango_u_valor_int(
 	if isinstance(argumento, tuple):
 		if(not isinstance(argumento[0], int)
 		or not isinstance(argumento[1], int)):
-			raise ValueError('Este criterio debe ser un entero o una tupla de dos enteros (rango)')
+			raise HTTPException(
+				status.HTTP_400_BAD_REQUEST,
+				'Este criterio debe ser un entero o una tupla de dos enteros (rango)',
+			)
 
 		criterios.append(and_(columna >= argumento[0], columna < argumento[1]))
 
 	if not isinstance(argumento, int):
-		raise ValueError('El día de la Reserva debe ser un entero')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'El día de la Reserva debe ser un entero'
+		)
 
 	criterios.append(columna == argumento)
 
@@ -131,12 +168,18 @@ def _agregar_criterio_de_rango_u_valor_date(
 	if isinstance(argumento, tuple):
 		if(not isinstance(argumento[0], date)
 		or not isinstance(argumento[1], date)):
-			raise ValueError('Este criterio debe ser un entero o una tupla de dos enteros (rango)')
+			raise HTTPException(
+				status.HTTP_400_BAD_REQUEST,
+				'Este criterio debe ser un entero o una tupla de dos enteros (rango)',
+			)
 
 		criterios.append(and_(columna >= argumento[0], columna < argumento[1]))
 
 	if not isinstance(argumento, date):
-		raise ValueError('El día de la Reserva debe ser un entero')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'El día de la Reserva debe ser un entero'
+		)
 
 	criterios.append(columna == argumento)
 
@@ -164,7 +207,10 @@ def create_reserva(session: _Session,
 	)
 
 	if session.query(Cancha).get(reserva.id_cancha) is None:
-		raise KeyError(f'La ID de Cancha especificada para la Reserva ({reserva.id_cancha}) no existe')
+		raise HTTPException(
+			status.HTTP_404_NOT_FOUND,
+			f'La ID de Cancha especificada para la Reserva ({reserva.id_cancha}) no existe'
+		)
 
 	teléfono = verificar_y_normalizar_teléfono(reserva.teléfono)
 
@@ -232,7 +278,10 @@ def get_reserva_completa(session: _Session,
 			.first()
 		)
 	else:
-		raise TypeError('Se esperaba o una ID de reserva o una ID de cancha')
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'Se esperaba o una ID de reserva o una ID de cancha',
+		)
 
 	if resultado is None:
 		return None
@@ -252,14 +301,15 @@ def get_canchas(session: _Session,
 
 	if nombre is not None:
 		if len(nombre) == 0:
-			raise ValueError('No puedes buscar un nombre vacío')
+			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='No puedes buscar un nombre vacío')
 
 		criterios.append(Cancha.nombre == nombre)
 
 	if techada is not None:
 		if not isinstance(techada, bool):
-			raise ValueError(
-				'El criterio de si la cancha está techada debe ser True, False o None'
+			raise HTTPException(
+				status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+				detail='El criterio de si la cancha está techada debe ser True, False o None',
 			)
 
 		criterios.append(Cancha.techada == techada)
@@ -275,7 +325,10 @@ def get_canchas(session: _Session,
 			or not isinstance(rango[0], int)
 			or not isinstance(rango[1], int)
 		):
-			raise TypeError('El rango debe ser una tupla de 2 enteros')
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail='El rango debe ser una tupla de 2 enteros',
+			)
 
 		stmt = (stmt
 			.order_by(Cancha.id)
@@ -303,7 +356,10 @@ def get_reservas(session: _Session,
 
 	if id_cancha:
 		if not isinstance(id_cancha, int):
-			raise TypeError('La ID de Cancha debe ser un entero')
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail='La ID de Cancha debe ser un entero',
+			)
 
 		criterios.append(Reserva.id_cancha == id_cancha)
 
@@ -432,14 +488,18 @@ def delete_canchas(session: _Session,
 
 	if nombre is not None:
 		if len(nombre) == 0:
-			raise ValueError('No puedes buscar un nombre vacío')
+			raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			'No puedes buscar un nombre vacío',
+		)
 
 		criterios.append(Cancha.nombre == nombre)
 
 	if techada is not None:
 		if not isinstance(techada, bool):
-			raise ValueError(
-				'El criterio de si la cancha está techada debe ser True, False o None'
+			raise HTTPException(
+				status.HTTP_422_UNPROCESSABLE_ENTITY,
+				'El criterio de si la cancha está techada debe ser True, False o None',
 			)
 
 		criterios.append(Cancha.techada == techada)
@@ -455,7 +515,10 @@ def delete_canchas(session: _Session,
 			or not isinstance(rango[0], int)
 			or not isinstance(rango[1], int)
 		):
-			raise TypeError('El rango debe ser una tupla de 2 enteros')
+			raise HTTPException(
+				status.HTTP_400_BAD_REQUEST,
+				'El rango debe ser una tupla de 2 enteros',
+			)
 
 		subselect = (subselect
 			.order_by(Cancha.id)
@@ -490,7 +553,10 @@ def delete_reservas(session: _Session,
 
 	if id_cancha is not None:
 		if not isinstance(id_cancha, int):
-			raise ValueError('La ID de Cancha de la Reserva debe ser un entero')
+			raise HTTPException(
+				status.HTTP_400_BAD_REQUEST,
+				'La ID de Cancha de la Reserva debe ser un entero',
+			)
 
 		criterios.append(Reserva.id_cancha == id_cancha)
 
@@ -504,7 +570,10 @@ def delete_reservas(session: _Session,
 
 	if nombre_contacto is not None:
 		if not isinstance(nombre_contacto, str) or len(nombre_contacto) == 0:
-			raise ValueError('El criterio de nombre de contacto debe ser un string no vacío')
+			raise HTTPException(
+				status.HTTP_400_BAD_REQUEST,
+				'El criterio de nombre de contacto debe ser un string no vacío',
+			)
 
 		criterios.append(Reserva.nombre_contacto == nombre_contacto)
 
@@ -519,7 +588,10 @@ def delete_reservas(session: _Session,
 			or not isinstance(rango[0], int)
 			or not isinstance(rango[1], int)
 		):
-			raise TypeError('El rango debe ser una tupla de 2 enteros')
+			raise HTTPException(
+				status.HTTP_400_BAD_REQUEST,
+				'El rango de resultados debe ser una tupla de 2 enteros',
+			)
 
 		subselect = (subselect
 			.order_by(Reserva.id)

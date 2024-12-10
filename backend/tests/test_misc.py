@@ -1,4 +1,5 @@
 from unittest import TestCase
+from fastapi import HTTPException
 from db.crud import verificar_y_normalizar_teléfono
 
 class TestMisc(TestCase):
@@ -9,8 +10,8 @@ class TestMisc(TestCase):
 		self.assertEqual(verificar_y_normalizar_teléfono('9 343 450 2306'), '93434502306')
 
 	def test_verificar_y_normalizar_teléfono_fails(self):
-		self.assertRaises(TypeError, lambda: verificar_y_normalizar_teléfono(3434502306))
-		self.assertRaises(ValueError, lambda: verificar_y_normalizar_teléfono(''))
-		self.assertRaises(ValueError, lambda: verificar_y_normalizar_teléfono('54 9 343 450-2306'))
-		self.assertRaises(ValueError, lambda: verificar_y_normalizar_teléfono('450-2306'))
-		self.assertRaises(ValueError, lambda: verificar_y_normalizar_teléfono('Max Verstappen con Peluca'))
+		self.assertRaises(HTTPException, lambda: verificar_y_normalizar_teléfono(3434502306))
+		self.assertRaises(HTTPException, lambda: verificar_y_normalizar_teléfono(''))
+		self.assertRaises(HTTPException, lambda: verificar_y_normalizar_teléfono('54 9 343 450-2306'))
+		self.assertRaises(HTTPException, lambda: verificar_y_normalizar_teléfono('450-2306'))
+		self.assertRaises(HTTPException, lambda: verificar_y_normalizar_teléfono('Max Verstappen con Peluca'))

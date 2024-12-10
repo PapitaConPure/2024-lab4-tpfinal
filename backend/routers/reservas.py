@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Optional, List
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, HTTPException, status
 from db import MakeSession, crud
 from db.models import Reserva, ReservaCompleta
 from db.schemas import ReservaSchema, ReservaCreate, ReservaCompletaSchema
@@ -17,21 +17,26 @@ def obtener_rango_u_valor_int(
 	mensaje_error_formato = f'El criterio de búsqueda según {nom_criterio} ({x=})'\
 		' debe expresarse como un entero o un rango bajo el formato "min:max"'
 
+	if ':' not in x:
+		return int(x)
+
+	partes = x.split(':')
+
+	if len(partes) != 2:
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			mensaje_error_formato)
+
 	try:
-		if ':' not in x:
-			return int(x)
-
-		partes = x.split(':')
-
-		if len(partes) != 2:
-			raise ValueError(mensaje_error_formato)
-
-		return (
-			int(partes[0]) if len(partes[0]) > 0 else 0,
-			int(partes[1]) if len(partes[1]) > 0 else 2**53 - 1,
-		)
+		val_min = int(partes[0]) if len(partes[0]) > 0 else 0
+		val_max = int(partes[1]) if len(partes[1]) > 0 else 2**53 - 1
 	except ValueError as exc:
-		raise ValueError(mensaje_error_formato) from exc
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			f'El criterio de búsqueda según {nom_criterio} recibido tenía un formato de entero inválido ({x=})',
+		) from exc
+
+	return (val_min, val_max)
 
 def obtener_rango_u_valor_date(
 	x: str | None,
@@ -43,21 +48,27 @@ def obtener_rango_u_valor_date(
 	mensaje_error_formato = f'El criterio de búsqueda según {nom_criterio} ({x=})'\
 		' debe expresarse como un entero o un rango bajo el formato "min:max"'
 
-	try:
-		if ':' not in x:
-			return datetime.fromisoformat(x)
+	if ':' not in x:
+		return datetime.fromisoformat(x)
 
-		partes = x.split(':')
+	partes = x.split(':')
 
-		if len(partes) != 2:
-			raise ValueError(mensaje_error_formato)
-
-		return (
-			datetime.fromisoformat(partes[0]) if len(partes[0]) > 0 else datetime.min,
-			datetime.fromisoformat(partes[1]) if len(partes[1]) > 0 else datetime.max,
+	if len(partes) != 2:
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			mensaje_error_formato,
 		)
+
+	try:
+		date_min = datetime.fromisoformat(partes[0]) if len(partes[0]) > 0 else datetime.min
+		date_max = datetime.fromisoformat(partes[1]) if len(partes[1]) > 0 else datetime.max
 	except ValueError as exc:
-		raise ValueError(mensaje_error_formato) from exc
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			f'El criterio de búsqueda según {nom_criterio} recibido tenía un formato de fecha inválido ({x=})',
+		) from exc
+
+	return (date_min, date_max)
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model = List[ReservaSchema] | List[ReservaCompletaSchema])
 def obtener_todas_las_reservas(full: bool = False) -> list[Reserva] | list[ReservaCompleta]:
@@ -68,26 +79,27 @@ def obtener_todas_las_reservas(full: bool = False) -> list[Reserva] | list[Reser
 
 @router.get('/id/{id_reserva}',
 	status_code=status.HTTP_200_OK,
-	response_model = ReservaSchema | ReservaCompletaSchema | None,
+	response_model = ReservaSchema | ReservaCompletaSchema,
 )
-def obtener_reserva_por_id(id_reserva: int, response: Response, full: bool = False) -> Reserva | ReservaCompleta | None:
+def obtener_reserva_por_id(id_reserva: int, full: bool = False) -> Reserva | ReservaCompleta:
 	session = MakeSession()
 	reserva = crud.get_reserva(session, id_reserva) if not full else crud.get_reserva_completa(session, id_reserva)
 
 	session.close()
 
 	if reserva is None:
-		response.status_code = status.HTTP_404_NOT_FOUND
-		return None
+		raise HTTPException(
+			status.HTTP_404_NOT_FOUND,
+			f'No se encontró ninguna reserva con la ID: {id_reserva}'
+		)
 
 	return reserva
 
 @router.get('/q',
 	status_code=status.HTTP_200_OK,
-	response_model = List[ReservaSchema] | List[ReservaCompletaSchema] | str | None,
+	response_model = List[ReservaSchema] | List[ReservaCompletaSchema],
 )
 def obtener_reservas_por_consulta(
-	response: Response,
 	id_cancha: Optional[int] = None,
 	qmin: Optional[int] = None,
 	qmax: Optional[int] = None,
@@ -97,11 +109,12 @@ def obtener_reservas_por_consulta(
 	tel: Optional[str] = None,
 	nom_contacto: Optional[str] = None,
 	full: bool = False,
-) -> list[Reserva] | list[ReservaCompleta] | str | None:
+) -> list[Reserva] | list[ReservaCompleta]:
 	session = MakeSession()
 
 	try:
 		rango = crud.qparams_a_rango(qmin, qmax)
+
 		dia_rango_u_valor = obtener_rango_u_valor_date(dia, 'día')
 		hora_rango_u_valor = obtener_rango_u_valor_int(hora, 'hora')
 		dur_mins_rango_u_valor = obtener_rango_u_valor_int(dur_mins, 'duración en minutos')
@@ -118,30 +131,28 @@ def obtener_reservas_por_consulta(
 			full=full,
 		)
 		return reservas
-	except ValueError as exc:
-		response.status_code = status.HTTP_400_BAD_REQUEST
-		return repr(exc)
 	finally:
 		session.close()
 
-@router.post('/cancha/{id_cancha}', status_code=status.HTTP_201_CREATED, response_model = ReservaSchema | str | None)
+@router.post('/cancha/{id_cancha}', status_code=status.HTTP_201_CREATED, response_model = ReservaSchema)
 def crear_reserva(
 	id_cancha: int,
-	response: Response,
 	dia: date,
 	hora: int,
 	dur_mins: int,
 	tel: str,
 	nom_contacto: str,
-) -> Reserva | str | None:
+) -> Reserva:
 	session = MakeSession()
 
 	cancha = crud.get_cancha(session, id_cancha)
 
 	if cancha is None:
 		session.close()
-		response.status_code = status.HTTP_404_NOT_FOUND
-		return None
+		raise HTTPException(
+			status.HTTP_404_NOT_FOUND,
+			f'No se encontró ninguna cancha con la ID: {id_cancha}, al intentar realizar una reserva'
+		)
 
 	try:
 		reserva_creada = crud.create_reserva(session, ReservaCreate(
@@ -154,30 +165,28 @@ def crear_reserva(
 		))
 
 		return reserva_creada
-	except ValueError as exc:
-		response.status_code = status.HTTP_400_BAD_REQUEST
-		return repr(exc)
 	finally:
 		session.close()
 
-@router.patch('/id/{id_reserva}', status_code=status.HTTP_200_OK, response_model = ReservaSchema | str | None)
+@router.patch('/id/{id_reserva}', status_code=status.HTTP_200_OK, response_model = ReservaSchema)
 def modificar_reserva(
 	id_reserva: int,
-	response: Response,
 	dia: Optional[date],
 	hora: Optional[int],
 	dur_mins: Optional[int],
 	tel: Optional[str],
 	nom_contacto: Optional[str],
-) -> Reserva | str | None:
+) -> Reserva:
 	session = MakeSession()
 
 	reserva = crud.get_reserva(session, id_reserva=id_reserva)
 
 	if reserva is None:
 		session.close()
-		response.status_code = status.HTTP_404_NOT_FOUND
-		return None
+		raise HTTPException(
+			status.HTTP_404_NOT_FOUND,
+			f'No se encontró ninguna reserva con la ID: {id_reserva}'
+		)
 
 	try:
 		if dia is not None:
@@ -194,30 +203,29 @@ def modificar_reserva(
 
 		if nom_contacto is not None:
 			reserva.nombre_contacto = nom_contacto
-	except TypeError as exc:
-		response.status_code = status.HTTP_400_BAD_REQUEST
-		return repr(exc)
 
-	session.commit()
-	session.close()
+		session.commit()
+	finally:
+		session.close()
 
 	return reserva
 
-@router.delete('/id/{id_reserva}', status_code=status.HTTP_200_OK, response_model = ReservaSchema | None)
-def quitar_reserva_por_id(id_reserva: int, response: Response) -> Reserva | None:
+@router.delete('/id/{id_reserva}', status_code=status.HTTP_200_OK, response_model = ReservaSchema)
+def quitar_reserva_por_id(id_reserva: int) -> Reserva:
 	session = MakeSession()
 	reserva_eliminada = crud.delete_reserva(session, id_reserva=id_reserva)
 	session.close()
 
 	if reserva_eliminada is None:
-		response.status_code = status.HTTP_404_NOT_FOUND
-		return None
+		raise HTTPException(
+			status.HTTP_404_NOT_FOUND,
+			f'No se eliminó ninguna reserva dado que no existe una con la ID indicada: {id_reserva}'
+		)
 
 	return reserva_eliminada
 
-@router.delete('/q', status_code=status.HTTP_200_OK, response_model = List[ReservaSchema] | str | None)
+@router.delete('/q', status_code=status.HTTP_200_OK, response_model = List[ReservaSchema])
 def quitar_reservas_por_consulta(
-	response: Response,
 	id_cancha: Optional[int] = None,
 	qmin: Optional[int] = None,
 	qmax: Optional[int] = None,
@@ -226,7 +234,7 @@ def quitar_reservas_por_consulta(
 	dur_mins: Optional[str] = None,
 	tel: Optional[str] = None,
 	nom_contacto: Optional[str] = None,
-) -> list[Reserva] | str | None:
+) -> list[Reserva]:
 	session = MakeSession()
 
 	try:
@@ -245,9 +253,7 @@ def quitar_reservas_por_consulta(
 			teléfono=tel,
 			nombre_contacto=nom_contacto,
 		)
+
 		return reservas
-	except ValueError as exc:
-		response.status_code = status.HTTP_400_BAD_REQUEST
-		return repr(exc)
 	finally:
 		session.close()
