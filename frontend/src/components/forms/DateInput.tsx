@@ -2,7 +2,7 @@ import React from 'react';
 
 interface DateInputProps {
 	id: string;
-	value: number;
+	value: string | number;
 	onChange: React.ChangeEventHandler<HTMLInputElement>;
 	label?: string;
 	required?: boolean;
@@ -33,7 +33,7 @@ export default function DateInput({
 				value={value}
 				onChange={onChange}
 				required={required}
-				className="rounded-md bg-white px-3 py-1 font-medium transition-all dark:bg-background-800 dark:font-light"
+				className="rounded-md border border-background-200 bg-white px-3 py-1 font-medium shadow-sm transition-all dark:border-0 dark:border-opacity-0 dark:bg-background-800 dark:font-light"
 			/>
 		</div>
 	);

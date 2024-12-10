@@ -7,37 +7,42 @@ import { useState } from 'react';
 import Button from '../components/forms/Button';
 import Toggle from '../components/forms/Toggle';
 import axios from 'axios';
-import config from '../config.json';
 import type { CanchaSchema } from '../schemas';
 import FieldInput from '../components/forms/FieldInput';
+import FormReport, { useFormReport } from '../components/forms/FormReport';
+import endpoint from '../backend';
 
 export default function Canchas() {
 	const [nombre, setNombre] = useState('');
 	const [techada, setTechada] = useState(false);
-	const [message, setMessage] = useState<{ kind: 'success' | 'error'; desc: string }>();
+	const [formReport, setFormReport] = useFormReport();
 
 	const handleSubmit: React.FormEventHandler = async (e) => {
 		e.preventDefault();
 
+		let response;
 		try {
-			const response = await axios.post(
-				`${config.BACKEND_API_URI}/canchas?nombre=${nombre}&techada=${techada}`,
-			);
+			response = await axios.post(endpoint('/canchas'), null, { params: {
+				nombre,
+				techada,
+			}});
 
 			const cancha = response.data as CanchaSchema;
 
 			setNombre('');
 			setTechada(false);
 
-			setMessage({
+			setFormReport({
 				kind: 'success',
 				desc: `Se registró una cancha "${cancha.nombre}" bajo la ID ${cancha.id}.`,
+				response,
 			});
 		} catch (error) {
 			console.error(error);
-			setMessage({
+			setFormReport({
 				kind: 'error',
 				desc: 'Ocurrió un error de servidor al registrar la cancha.',
+				response,
 			});
 		}
 	};
@@ -67,17 +72,7 @@ export default function Canchas() {
 							onChange={e => setTechada(e.target.checked)}
 						/>
 
-						{message && (
-							<div
-								className={`rounded-md border-2 px-4 py-2 ${
-									message.kind === 'success'
-										? 'border-green-800 bg-green-200 dark:border-green-700 dark:bg-green-800'
-										: 'border-red-800 bg-red-200 dark:border-red-700 dark:bg-red-800'
-								}`}
-							>
-								{message.desc}
-							</div>
-						)}
+						<FormReport report={formReport}/>
 
 						<Button submit kind="primary">
 							Registrar

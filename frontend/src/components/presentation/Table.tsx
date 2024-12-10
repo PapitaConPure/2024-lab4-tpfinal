@@ -111,7 +111,7 @@ export default function Table({
 
 	return (
 		<div
-			className={`border-1 overflow-clip rounded-md border-background-100 p-0 dark:border-background-900 ${spread ? 'w-full' : ''}`}
+			className={`shadow-md border-1 overflow-clip rounded-md border-background-100 p-0 dark:border-background-900 ${spread ? 'w-full' : ''}`}
 		>
 			<div
 				style={{

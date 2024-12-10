@@ -26,7 +26,7 @@ export default function Button({
 	className = '',
 	icon = undefined,
 }: ButtonProps) {
-	const baseStyles = `${stretched && 'w-full'} ${children ? 'px-3 sm:px-4' : 'px-1.5 sm:px-2'} py-1.5 sm:py-2 rounded-lg font-semibold flex items-center gap-2 transition-all`;
+	const baseStyles = `${stretched && 'w-full'} ${children ? 'px-3 sm:px-4' : 'px-1.5 sm:px-2'} py-1.5 sm:py-2 drop-shadow-sm rounded-lg font-semibold flex items-center gap-2 transition-all`;
 	const variantsStyles: { [K in ButtonKind]: string } = {
 		primary:
 			'bg-primary-500 text-text-950 hover:bg-primary-600 active:bg-primary-700',
