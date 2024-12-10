@@ -1,7 +1,14 @@
 type Row<Columns extends readonly string[]> = Record<Columns[number], any>;
 
 type ColumnStyle = {
-	template: 'none' | 'min-content' | 'max-content' | 'auto' | `${string}%` | `${string}px` | `${string}rem`;
+	template:
+		| 'none'
+		| 'min-content'
+		| 'max-content'
+		| 'auto'
+		| `${string}%`
+		| `${string}px`
+		| `${string}rem`;
 	rowStyles?: string;
 };
 
@@ -91,11 +98,16 @@ const defaultTable = new TabularData('Cargando...')
 	.setColumnStyles({ 'Cargando...': { template: 'auto' } })
 	.addRow({ 'Cargando...': '...' }) as TabularData<[string]>;
 
-export default function Table({ data, loading = false, spread = false, className = '' }: TableProps) {
+export default function Table({
+	data,
+	loading = false,
+	spread = false,
+	className = '',
+}: TableProps) {
 	const { columns, rows } = loading ? defaultTable.body : data.body;
 
-	const tableBackgroundOddStyles = 'bg-secondary-400 dark:bg-secondary-200';
-	const tableBackgroundEvenStyles = 'bg-secondary-600 dark:bg-secondary-300';
+	const tableBackgroundOddStyles = 'bg-secondary-400 dark:bg-secondary-300';
+	const tableBackgroundEvenStyles = 'bg-secondary-700 dark:bg-secondary-400';
 
 	return (
 		<div
@@ -105,12 +117,12 @@ export default function Table({ data, loading = false, spread = false, className
 				style={{
 					gridTemplateColumns: columns.map((column) => column.template).join(' '),
 				}}
-				className={`${className} grid w-full overflow-y-auto overflow-x-hidden focus:outline-none`}
+				className={`${className} inline-grid w-full overflow-auto focus:outline-none`}
 			>
 				{columns.map((column, i) => (
 					<div
 						key={i}
-						className="bg-primary-600 px-1 py-1.5 text-center text-base sm:text-lg font-bold text-text-950 dark:bg-primary-500 sm:px-4 md:px-10"
+						className="bg-primary-500 px-1 py-1.5 text-center text-base font-bold text-text-950 sm:px-2 sm:text-lg md:px-3 lg:px-4"
 					>
 						{column.name}
 					</div>
@@ -119,7 +131,7 @@ export default function Table({ data, loading = false, spread = false, className
 					return columns.map((column, j) => (
 						<div
 							key={i * rows.length + j}
-							className={`text-foreground flex flex-wrap items-center justify-center bg-opacity-15 px-1 py-3 text-center font-light dark:bg-opacity-20 dark:font-extralight text-sm sm:text-base sm:px-1.5 md:px-4 ${i % 2 === 0 ? tableBackgroundOddStyles : tableBackgroundEvenStyles}`}
+							className={`text-foreground flex flex-wrap items-center justify-center bg-opacity-5 px-1 py-3 text-center text-sm font-light dark:bg-opacity-20 dark:font-extralight sm:px-1.5 sm:text-base md:px-4 ${i % 2 === 0 ? tableBackgroundOddStyles : tableBackgroundEvenStyles}`}
 						>
 							{row[column.name]}
 						</div>
