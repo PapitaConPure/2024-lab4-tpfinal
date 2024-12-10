@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { PageContent } from '../components/structure/PageContent';
-import Header from '../components/structure/Header';
-import Main from '../components/structure/Main';
-import Section from '../components/structure/Section';
-import Footer from '../components/structure/Footer';
+import { PageContent } from '../components/layout/PageContent';
+import Header from '../components/layout/Header';
+import Main from '../components/layout/Main';
+import Section from '../components/layout/Section';
+import Footer from '../components/layout/Footer';
 import Button from '../components/forms/Button';
 import Table, { TabularData } from '../components/presentation/Table';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

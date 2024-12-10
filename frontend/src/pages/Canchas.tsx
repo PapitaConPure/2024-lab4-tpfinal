@@ -1,14 +1,15 @@
-import { PageContent } from '../components/structure/PageContent';
-import Header from '../components/structure/Header';
-import Main from '../components/structure/Main';
-import Section from '../components/structure/Section';
-import Footer from '../components/structure/Footer';
+import { PageContent } from '../components/layout/PageContent';
+import Header from '../components/layout/Header';
+import Main from '../components/layout/Main';
+import Section from '../components/layout/Section';
+import Footer from '../components/layout/Footer';
 import { useState } from 'react';
 import Button from '../components/forms/Button';
 import Toggle from '../components/forms/Toggle';
 import axios from 'axios';
 import config from '../config.json';
 import type { CanchaSchema } from '../schemas';
+import FieldInput from '../components/forms/FieldInput';
 
 export default function Canchas() {
 	const [nombre, setNombre] = useState('');
@@ -50,26 +51,18 @@ export default function Canchas() {
 				<p>Puedes modificarla o darla de baja cuando desees en la <b>Dashboard</b>.</p>
 				<Section>
 					<form className="mx-4 space-y-4" onSubmit={handleSubmit}>
-						<div className="flex flex-col">
-							<label
-								htmlFor="nombre"
-								className="mb-0.5 block font-bold transition-all dark:font-medium"
-							>
-								Nombre
-							</label>
-							<input
-								type="text"
-								id="nombre"
-								value={nombre}
-								onChange={(e) => setNombre(e.target.value)}
-								required
-								className="rounded-md bg-white px-3 py-1 font-medium transition-all dark:bg-background-800 dark:font-light"
-							/>
-						</div>
+						<FieldInput
+							id="nombre"
+							type="text"
+							label="Nombre"
+							value={nombre}
+							required
+							onChange={e => setNombre(e.target.value)}
+						/>
 
 						<Toggle
-							label="Techada"
 							id="techada"
+							label="Techada"
 							checked={techada}
 							onChange={e => setTechada(e.target.checked)}
 						/>
