@@ -108,6 +108,7 @@ def obtener_reservas_por_consulta(
 	dur_mins: Optional[str] = None,
 	tel: Optional[str] = None,
 	nom_contacto: Optional[str] = None,
+	nom_cancha: Optional[str] = None,
 	full: bool = False,
 ) -> list[Reserva] | list[ReservaCompleta]:
 	session = MakeSession()
@@ -128,6 +129,7 @@ def obtener_reservas_por_consulta(
 			duración_minutos=dur_mins_rango_u_valor,
 			teléfono=tel,
 			nombre_contacto=nom_contacto,
+			nombre_cancha=nom_cancha,
 			full=full,
 		)
 		return reservas
@@ -240,6 +242,7 @@ def quitar_reservas_por_consulta(
 	dur_mins: Optional[str] = None,
 	tel: Optional[str] = None,
 	nom_contacto: Optional[str] = None,
+	nom_cancha: Optional[str] = None,
 ) -> list[Reserva]:
 	session = MakeSession()
 
@@ -258,6 +261,7 @@ def quitar_reservas_por_consulta(
 			duración_minutos=dur_mins_rango_u_valor,
 			teléfono=tel,
 			nombre_contacto=nom_contacto,
+			nombre_cancha=nom_cancha,
 		)
 
 		return reservas
