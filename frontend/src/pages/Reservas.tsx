@@ -144,7 +144,7 @@ export default function Reservas() {
 
 			setFormReport({
 				kind: 'success',
-				desc: `Se registró una reserva bajo la ID ${reserva.id}.`,
+				desc: `Se ${modifies ? 'modificó la' : 'registró una'} reserva bajo la ID ${reserva.id}.`,
 				response,
 			});
 		} catch (error) {
@@ -152,7 +152,7 @@ export default function Reservas() {
 			console.info(response);
 			setFormReport({
 				kind: 'error',
-				desc: 'Ocurrió un error de servidor al registrar la reserva.',
+				desc: `Ocurrió un error de servidor al ${modifies ? 'modificar' : 'registrar'} la reserva.`,
 				response,
 			});
 		}
