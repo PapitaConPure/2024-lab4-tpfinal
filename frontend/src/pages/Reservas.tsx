@@ -3,7 +3,6 @@ import Header from '../components/layout/Header';
 import Main from '../components/layout/Main';
 import Section from '../components/layout/Section';
 import Button from '../components/forms/Button';
-import FieldInput from '../components/forms/FieldInput';
 import DateInput from '../components/forms/DateInput';
 import Footer from '../components/layout/Footer';
 import { useEffect, useState } from 'react';
@@ -13,8 +12,10 @@ import FormReport, { useFormReport } from '../components/forms/FormReport';
 import axios from 'axios';
 import Table, { TabularData } from '../components/presentation/Table';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faHandPointer, faHourglass, faX } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faHourglass, faX } from '@fortawesome/free-solid-svg-icons';
 import { useSearchParams } from 'react-router';
+import { numberStringToTelephoneString } from '../utils';
+import FieldInput from '../components/forms/FieldInput';
 
 export default function Reservas() {
 	const [searchParams] = useSearchParams();
@@ -75,7 +76,7 @@ export default function Reservas() {
 			setDía(reserva.dia);
 			setHora(reserva.hora);
 			setDuraciónMinutos(reserva.duración_minutos);
-			setTeléfono(reserva.teléfono);
+			setTeléfono(numberStringToTelephoneString(reserva.teléfono));
 			setNombreContacto(reserva.nombre_contacto);
 			setNombreCanchaLoading(false);
 		})();
@@ -101,7 +102,7 @@ export default function Reservas() {
 					},
 				});
 
-			if (modifies)
+			if(modifies)
 				response = await axios.patch(endpoint(`/reservas/id/${editId}/`), null, {
 					params: {
 						dia: día,
@@ -124,7 +125,7 @@ export default function Reservas() {
 					validateStatus: (status) => status >= 200 && status < 500,
 				});
 
-			if (response.status >= 400) {
+			if(response.status >= 400) {
 				return setFormReport({
 					kind: 'error',
 					desc: 'Hubo un problema al intentar registrar la reserva.',
@@ -172,7 +173,7 @@ export default function Reservas() {
 				{modifies && <h2>Modifica una Reserva</h2>}
 				{modifies && (
 					<p>
-						Estás por modificar la reserva de ID {editId} a la cancha 
+						Estás por modificar la reserva de ID {editId} a la cancha
 						{nombreCanchaLoading ? (
 							<span className="animate-pulse">
 								<FontAwesomeIcon className="animate-spin" icon={faHourglass} />
@@ -188,59 +189,78 @@ export default function Reservas() {
 					<Section>
 						<form className="mx-4 my-4 space-y-4" onSubmit={handleSubmit}>
 							<div>
-								{!modifies && <label
-									htmlFor={'idCancha'}
-									className="mb-0.5 block font-bold transition-all dark:font-medium"
-								>
-									Seleccionar Cancha
-								</label>}
-								{!modifies && <Table
-									spread
-									loading={canchasLoading}
-									className="max-h-[11.5rem] md:max-h-[16.5rem] lg:max-h-[18rem]"
-									data={new TabularData('ID', 'Nombre', 'Techada', 'Acciones')
-										.setColumnStyles({
-											Nombre: { template: 'auto' },
-											Acciones: { template: 'max-content' },
-										})
-										.addRows(
-											...canchas.map((cancha) => ({
-												ID: (
-													<div className="font-semibold text-accent-600 dark:font-normal dark:text-accent-500">
-														{cancha.id}
-													</div>
-												),
-												Nombre: cancha.nombre,
-												Techada: (
-													<FontAwesomeIcon
-														className={
-															cancha.techada
-																? 'text-emerald-700 dark:text-green-500'
-																: 'text-red-700 dark:text-red-400'
-														}
-														icon={cancha.techada ? faCheck : faX}
-													/>
-												),
-												Acciones: (
-													<div className="flex flex-row flex-wrap space-x-2">
-														<Button
-															kind={
-																idCancha === cancha.id
-																	? 'primary'
-																	: 'secondary'
+								{!modifies && (
+									<label
+										htmlFor={'idCancha'}
+										className="mb-0.5 block font-bold transition-all dark:font-medium"
+									>
+										Seleccionar Cancha
+									</label>
+								)}
+								{!modifies && (
+									<Table
+										spread
+										loading={canchasLoading}
+										className="max-h-[11.5rem] md:max-h-[16.5rem] lg:max-h-[18rem]"
+										data={new TabularData(
+											'ID',
+											'Nombre',
+											'Techada',
+											'Selección',
+										)
+											.setColumnStyles({
+												Nombre: { template: 'auto' },
+												Selección: { template: 'max-content' },
+											})
+											.addRows(
+												...canchas.map((cancha) => ({
+													ID: (
+														<div className="font-semibold text-accent-600 dark:font-normal dark:text-accent-500">
+															{cancha.id}
+														</div>
+													),
+													Nombre:
+														idCancha === cancha.id ? (
+															<b className="darl:font-bold font-extrabold text-primary-700 dark:text-primary-500">
+																{cancha.nombre}
+															</b>
+														) : (
+															cancha.nombre
+														),
+													Techada: (
+														<FontAwesomeIcon
+															className={
+																cancha.techada
+																	? 'text-emerald-700 dark:text-green-500'
+																	: 'text-red-700 dark:text-red-400'
 															}
-															onClick={() => setIdCancha(cancha.id)}
-															icon={
-																idCancha === cancha.id
-																	? faCheck
-																	: faHandPointer
-															}
+															icon={cancha.techada ? faCheck : faX}
 														/>
-													</div>
-												),
-											})),
-										)}
-								/>}
+													),
+													Selección: (
+														<div className="flex flex-row flex-wrap space-x-2">
+															<Button
+																kind={
+																	idCancha === cancha.id
+																		? 'primary'
+																		: 'secondary'
+																}
+																onClick={() =>
+																	setIdCancha(cancha.id)
+																}
+																className={`box-content h-6 w-6 !rounded-full [&_*]:m-auto ${idCancha === cancha.id ? '!p-0.5' : 'bg-opacity-25 dark:bg-opacity-60 hover:bg-secondary-200 active:bg-secondary-700 !p-0'}`}
+																icon={
+																	idCancha === cancha.id
+																		? faCheck
+																		: undefined
+																}
+															/>
+														</div>
+													),
+												})),
+											)}
+									/>
+								)}
 							</div>
 
 							<DateInput
@@ -283,7 +303,7 @@ export default function Reservas() {
 								label="Teléfono"
 								value={teléfono}
 								required
-								onChange={(e) => setTeléfono(e.target.value)}
+								onChange={(e) => setTeléfono(numberStringToTelephoneString(e.target.value))}
 							/>
 
 							<FieldInput
