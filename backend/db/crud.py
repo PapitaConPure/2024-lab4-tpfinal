@@ -144,18 +144,17 @@ def _agregar_criterio_de_rango_u_valor_int(
 		or not isinstance(argumento[1], int)):
 			raise HTTPException(
 				status.HTTP_400_BAD_REQUEST,
-				'Este criterio debe ser un entero o una tupla de dos enteros (rango)',
+				f'Este criterio debe ser un entero o una tupla de dos enteros (rango). Recibido: {argumento=}',
 			)
 
-		criterios.append(and_(columna >= argumento[0], columna < argumento[1]))
-
-	if not isinstance(argumento, int):
+		criterios.append(and_(argumento[0] <= columna, columna <= argumento[1]))
+	elif isinstance(argumento, int):
+		criterios.append(columna == argumento)
+	else:
 		raise HTTPException(
 			status.HTTP_400_BAD_REQUEST,
-			'El día de la Reserva debe ser un entero'
+			f'Este criterio debe ser un entero o una tupla de dos enteros (rango). Recibido: {argumento=}'
 		)
-
-	criterios.append(columna == argumento)
 
 def _agregar_criterio_de_rango_u_valor_date(
 	criterios: list,
@@ -170,18 +169,17 @@ def _agregar_criterio_de_rango_u_valor_date(
 		or not isinstance(argumento[1], date)):
 			raise HTTPException(
 				status.HTTP_400_BAD_REQUEST,
-				'Este criterio debe ser un entero o una tupla de dos enteros (rango)',
+				f'Este criterio debe ser una fecha o una tupla de dos fechas (rango). Recibido: {argumento=}',
 			)
 
-		criterios.append(and_(columna >= argumento[0], columna < argumento[1]))
-
-	if not isinstance(argumento, date):
+		criterios.append(and_(argumento[0] <= columna, columna <= argumento[1]))
+	elif isinstance(argumento, date):
+		criterios.append(columna == argumento)
+	else:
 		raise HTTPException(
 			status.HTTP_400_BAD_REQUEST,
-			'El día de la Reserva debe ser un entero'
+			f'Este criterio debe ser una fecha o una tupla de dos fechas (rango). Recibido: {argumento=}'
 		)
-
-	criterios.append(columna == argumento)
 
 def create_cancha(session: _Session,
 	cancha: CanchaCreate
@@ -303,7 +301,12 @@ def get_canchas(session: _Session,
 		if len(nombre) == 0:
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='No puedes buscar un nombre vacío')
 
-		criterios.append(Cancha.nombre == nombre)
+		nombre_maqueta = (
+			nombre
+			.replace('*', '%')
+			.replace('_', r'\_')
+		)
+		criterios.append(Cancha.nombre.ilike(nombre_maqueta, escape='\\'))
 
 	if techada is not None:
 		if not isinstance(techada, bool):
@@ -348,6 +351,7 @@ def get_reservas(session: _Session,
 	duración_minutos: Optional[int | tuple[int, int]] = None,
 	teléfono: Optional[str] = None,
 	nombre_contacto: Optional[str] = None,
+	nombre_cancha: Optional[str] = None,
 	full: bool = False,
 ) -> list[Reserva] | list[ReservaCompleta]:
 	"""Devuelve una lista de objetos que representan Canchas encontradas en la BDD"""
@@ -372,12 +376,31 @@ def get_reservas(session: _Session,
 		criterios.append(Reserva.teléfono == teléfono)
 
 	if nombre_contacto is not None:
-		criterios.append(Reserva.nombre_contacto == str(nombre_contacto))
+		nombre_maqueta = (
+			str(nombre_contacto)
+			.replace('*', '%')
+			.replace('_', r'\_')
+		)
+		criterios.append(Reserva.nombre_contacto.ilike(nombre_maqueta, escape='\\'))
 
-	stmt = select(Reserva) if not full else (
+	stmt = select(Reserva) if not full and not nombre_cancha else (
 		select(Reserva, Cancha)
 		.join(Reserva.cancha)
 	)
+
+	if nombre_cancha is not None:
+		if not isinstance(nombre_cancha, str) or len(nombre_cancha) == 0:
+			raise HTTPException(
+				status.HTTP_400_BAD_REQUEST,
+				'El criterio de nombre de cancha debe ser un string no vacío',
+			)
+
+		nombre_maqueta = (
+			nombre_cancha
+			.replace('*', '%')
+			.replace('_', r'\_')
+		)
+		criterios.append(Cancha.nombre.ilike(nombre_maqueta, escape='\\'))
 
 	if len(criterios) > 0:
 		stmt = stmt.where(and_(*criterios))
@@ -449,13 +472,13 @@ def update_reserva(session: _Session,
 
 def delete_cancha(session: _Session,
 	id_cancha: int,
-) -> Cancha | None:
+) -> Cancha:
 	"""Busca una Cancha en la BDD con la ID especificada, la elimina y y la devuelve"""
 
 	db_cancha_por_eliminar = session.query(Cancha).filter(Cancha.id == id_cancha).first()
 
 	if db_cancha_por_eliminar is None:
-		return None
+		raise HTTPException(status.HTTP_404_NOT_FOUND, f'No se encontró una cancha de ID {id_cancha} a eliminar')
 
 	session.delete(db_cancha_por_eliminar)
 	session.commit()
@@ -464,13 +487,13 @@ def delete_cancha(session: _Session,
 
 def delete_reserva(session: _Session,
 	id_reserva: int,
-) -> Reserva | None:
+) -> Reserva:
 	"""Busca una Resrva en la BDD con la ID especificada, la elimina y la devuelve"""
 
 	db_reserva_por_eliminar = session.query(Reserva).filter(Reserva.id == id_reserva).first()
 
 	if db_reserva_por_eliminar is None:
-		return None
+		raise HTTPException(status.HTTP_404_NOT_FOUND, f'No se encontró una reserva de ID {id_reserva} a eliminar')
 
 	session.delete(db_reserva_por_eliminar)
 	session.commit()
@@ -493,7 +516,12 @@ def delete_canchas(session: _Session,
 			'No puedes buscar un nombre vacío',
 		)
 
-		criterios.append(Cancha.nombre == nombre)
+		nombre_maqueta = (
+			nombre
+			.replace('*', '%')
+			.replace('_', r'\_')
+		)
+		criterios.append(Cancha.nombre.ilike(nombre_maqueta))
 
 	if techada is not None:
 		if not isinstance(techada, bool):
@@ -546,6 +574,7 @@ def delete_reservas(session: _Session,
 	duración_minutos: Optional[int | tuple[int, int]] = None,
 	teléfono: Optional[str] = None,
 	nombre_contacto: Optional[str] = None,
+	nombre_cancha: Optional[str] = None,
 ) -> list[Reserva]:
 	"""Elimina Canchas que coincidan con los criterios indicados y las devuelve en una lista"""
 
@@ -575,9 +604,30 @@ def delete_reservas(session: _Session,
 				'El criterio de nombre de contacto debe ser un string no vacío',
 			)
 
-		criterios.append(Reserva.nombre_contacto == nombre_contacto)
+		nombre_maqueta = (
+			nombre_contacto
+			.replace('*', '%')
+			.replace('_', r'\_')
+		)
+		criterios.append(Reserva.nombre_contacto.ilike(nombre_maqueta, escape='\\'))
 
 	subselect = select(Reserva.id)
+
+	if nombre_cancha is not None:
+		if not isinstance(nombre_cancha, str) or len(nombre_cancha) == 0:
+			raise HTTPException(
+				status.HTTP_400_BAD_REQUEST,
+				'El criterio de nombre de cancha debe ser un string no vacío',
+			)
+
+		subselect = subselect.join(Cancha, Cancha.id == Reserva.id_cancha)
+
+		nombre_maqueta = (
+			nombre_cancha
+			.replace('*', '%')
+			.replace('_', r'\_')
+		)
+		criterios.append(Cancha.nombre.ilike(nombre_maqueta, escape='\\'))
 
 	if len(criterios) > 0:
 		subselect = subselect.where(and_(*criterios))
