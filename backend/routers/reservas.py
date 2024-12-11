@@ -35,6 +35,12 @@ def obtener_rango_u_valor_int(
 			status.HTTP_400_BAD_REQUEST,
 			f'El criterio de búsqueda según {nom_criterio} recibido tenía un formato de entero inválido ({x=})',
 		) from exc
+	
+	if val_min > val_max:
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			f'El mínimo y máximo del rango de enteros están invertidos. Dado que la petición es ambigua, no puede procesarse ({x=})',
+		)
 
 	return (val_min, val_max)
 
@@ -67,6 +73,12 @@ def obtener_rango_u_valor_date(
 			status.HTTP_400_BAD_REQUEST,
 			f'El criterio de búsqueda según {nom_criterio} recibido tenía un formato de fecha inválido ({x=})',
 		) from exc
+	
+	if date_min > date_max:
+		raise HTTPException(
+			status.HTTP_400_BAD_REQUEST,
+			f'El mínimo y máximo del rango de fechas están invertidos. Dado que la petición es ambigua, no puede procesarse ({x=})',
+		)
 
 	return (date_min, date_max)
 
