@@ -1,5 +1,5 @@
-import { faHourglass } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHourglass } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 type Row<Columns extends readonly string[]> = Record<Columns[number], any>;
 
@@ -99,7 +99,13 @@ interface TableProps {
 
 const defaultTable = new TabularData('Cargando...')
 	.setColumnStyles({ 'Cargando...': { template: 'auto' } })
-	.addRow({ 'Cargando...': <div className="animate-pulse"><FontAwesomeIcon className="animate-spin" icon={faHourglass}/></div> }) as TabularData<[string]>;
+	.addRow({
+		'Cargando...': (
+			<div className="animate-pulse">
+				<FontAwesomeIcon className="animate-spin" icon={faHourglass} />
+			</div>
+		),
+	}) as TabularData<[string]>;
 
 export default function Table({
 	data,
@@ -116,7 +122,7 @@ export default function Table({
 
 	return (
 		<div
-			className={`shadow-md border-1 overflow-clip rounded-md border-background-100 p-0 dark:border-background-900 ${spread ? 'w-full' : ''}`}
+			className={`border-1 overflow-clip rounded-md border-background-100 p-0 shadow-md dark:border-background-900 ${spread ? 'w-full' : ''}`}
 		>
 			<div
 				style={{
@@ -132,16 +138,26 @@ export default function Table({
 						{column.name}
 					</div>
 				))}
-				{rows.map((row, i) => {
-					return columns.map((column, j) => (
+				{!rows.length &&
+					columns.map((_, i) => (
 						<div
-							key={i * rows.length + j}
-							className={`text-foreground flex flex-wrap items-center justify-center bg-opacity-5 px-1 py-3 text-center text-sm font-light dark:bg-opacity-20 dark:font-extralight sm:px-1.5 sm:text-base md:px-4 ${i % 2 === 0 ? tableBackgroundOddStyles : tableBackgroundEvenStyles}`}
+							key={-i - 1}
+							className={`text-foreground flex flex-wrap items-center justify-center bg-opacity-5 px-1 py-3 text-center text-sm font-semibold text-secondary-600 dark:bg-opacity-20 dark:font-medium dark:text-secondary-300 sm:px-1.5 sm:text-base md:px-4 ${tableBackgroundOddStyles}`}
 						>
-							{row[column.name]}
+							-
 						</div>
-					));
-				})}
+					))}
+				{rows.length > 0 &&
+					rows.map((row, i) => {
+						return columns.map((column, j) => (
+							<div
+								key={i * rows.length + j}
+								className={`text-foreground flex flex-wrap items-center justify-center bg-opacity-5 px-1 py-3 text-center text-sm font-light dark:bg-opacity-20 dark:font-extralight sm:px-1.5 sm:text-base md:px-4 ${i % 2 === 0 ? tableBackgroundEvenStyles : tableBackgroundOddStyles}`}
+							>
+								{row[column.name]}
+							</div>
+						));
+					})}
 			</div>
 		</div>
 	);
