@@ -207,7 +207,7 @@ class TestAPIReservas(TestCase):
 			TestAPIReservas.verificar_reserva(self, data[0])
 
 	def test_id(self):
-		response = client.get('/reservas/id/5')
+		response = client.get('/reservas/id/9')
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		data = response.json()
 		response.close()
@@ -215,7 +215,7 @@ class TestAPIReservas(TestCase):
 		TestAPIReservas.verificar_reserva(self, data)
 
 	def test_id_completo(self):
-		response = client.get('/reservas/id/174?full=1')
+		response = client.get('/reservas/id/9?full=1')
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		data = response.json()
 		response.close()
@@ -267,7 +267,7 @@ class TestAPIReservas(TestCase):
 		equalities = [
 			{
 				'id_cancha': idc,
-				'dia': date(2024, 8, 27),
+				'dia': '2024-08-27',
 				'hora': 18,
 				'duración_minutos': 45,
 				'teléfono': '93434502306',
@@ -275,7 +275,7 @@ class TestAPIReservas(TestCase):
 			},
 			{
 				'id_cancha': idc,
-				'dia': date(2024, 8, 28),
+				'dia': '2024-08-28',
 				'hora': 19,
 				'duración_minutos': 180,
 				'teléfono': '93434205774',
@@ -283,7 +283,7 @@ class TestAPIReservas(TestCase):
 			},
 			{
 				'id_cancha': idc,
-				'dia': date(2024, 6, 2),
+				'dia': '2024-06-02',
 				'hora': 22,
 				'duración_minutos': 90,
 				'teléfono': '93439122017',
@@ -309,24 +309,24 @@ class TestAPIReservas(TestCase):
 		client.delete(f'canchas/id/{idc}').close()
 
 	def test_patch(self):
-		response = client.patch('/reservas/id/174?dia=2024-12-12&hora=13&dur_mins=60&tel=3424202445&nom_contacto=sebastian')
+		response = client.patch('/reservas/id/12?dia=2024-12-12&hora=13&dur_mins=60&tel=3424202445&nom_contacto=sebastian')
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		data = response.json()
 		response.close()
 
-		self.assertEqual(data['id'], 174)
-		self.assertEqual(data['dia'], 12)
+		self.assertEqual(data['id'], 12)
+		self.assertEqual(data['dia'], '2024-12-12')
 		self.assertEqual(data['hora'], 13)
 		self.assertEqual(data['duración_minutos'], 60)
 		self.assertEqual(data['teléfono'], '3424202445')
 		self.assertEqual(data['nombre_contacto'], 'sebastian')
 
-		response = client.patch('/reservas/id/174?dia=2024-12-24&hora=7&dur_mins=120&tel=3434502306&nom_contacto=maurisio')
+		response = client.patch('/reservas/id/12?dia=2024-12-24&hora=7&dur_mins=120&tel=3434502306&nom_contacto=maurisio')
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		data = response.json()
 		response.close()
 
-		self.assertEqual(data['dia'], 24)
+		self.assertEqual(data['dia'], '2024-12-24')
 		self.assertEqual(data['hora'], 7)
 		self.assertEqual(data['duración_minutos'], 120)
 		self.assertEqual(data['teléfono'], '3434502306')
@@ -346,7 +346,7 @@ class TestAPIReservas(TestCase):
 		data = response.json()
 		response.close()
 
-		self.assertEqual(data['dia'], 8)
+		self.assertEqual(data['dia'], '2024-12-11')
 		self.assertEqual(data['hora'], 14)
 		self.assertEqual(data['duración_minutos'], 50)
 		self.assertEqual(data['teléfono'], '9314451106')
