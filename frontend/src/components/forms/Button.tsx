@@ -4,7 +4,7 @@ import React from 'react';
 type ButtonKind = 'primary' | 'secondary' | 'success' | 'danger';
 
 interface ButtonProps {
-	children?: string;
+	children?: React.ReactNode;
 	kind?: ButtonKind;
 	stretched?: boolean;
 	disabled?: boolean;

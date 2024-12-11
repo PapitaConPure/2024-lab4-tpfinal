@@ -15,13 +15,8 @@ export type ReservaSchema = {
 }
 
 export type ReservaCompletaSchema = {
-	id: number
-	id_cancha: number,
-	dia: string,
-	hora: number,
-	duración_minutos: number,
-	teléfono: string,
-	nombre_contacto: string,
+	reserva: ReservaSchema,
+	cancha: CanchaSchema,
 }
 
 export type HTTPValidationError = {

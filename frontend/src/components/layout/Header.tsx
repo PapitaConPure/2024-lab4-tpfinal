@@ -4,10 +4,9 @@ import { faBars, faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from './PageContent';
 import { NavLink, useNavigate } from 'react-router';
 
-type SelectedPageName =
-	| 'Home'
-	| 'Canchas'
-	| 'Reservas';
+type BasePageName = 'Home' | 'Canchas' | 'Reservas';
+
+type SelectedPageName = BasePageName | `*${string}`;
 
 interface HeaderOptions {
 	selectedPageName: SelectedPageName;
@@ -17,10 +16,14 @@ export default function Header({ selectedPageName }: HeaderOptions) {
 	const { theme, toggleTheme } = useTheme();
 	const navigate = useNavigate();
 
+	const isArbitraryPage = selectedPageName.startsWith('*');
+
 	return (
 		<div className="mb-4">
-			<div className="flex flex-row items-center justify-between border-b border-solid border-background-200 px-4 lg:px-8 py-2 dark:border-background-800">
-				<h1 onClick={() => navigate('/')} className='hover:cursor-pointer '>Paddler</h1>
+			<div className="flex flex-row items-center justify-between border-b border-solid border-background-200 px-4 py-2 dark:border-background-800 lg:px-8">
+				<h1 onClick={() => navigate('/')} className="hover:cursor-pointer">
+					Paddler
+				</h1>
 
 				<button
 					onClick={() => document.getElementById('v-menu')?.classList.toggle('hidden')}
@@ -29,12 +32,17 @@ export default function Header({ selectedPageName }: HeaderOptions) {
 					<FontAwesomeIcon size="2x" icon={faBars} />
 				</button>
 				<nav className="hidden flex-row space-x-6 md:flex">
+					{isArbitraryPage && (
+						<div key={-1} className="my-auto font-semibold italic hover:cursor-default">
+							{selectedPageName.slice(1)}
+						</div>
+					)}
 					{[
 						{ label: 'Dashboard', pageName: 'Home', route: '/' },
 						{ label: 'Registrar Cancha', pageName: 'Canchas', route: '/canchas' },
 						{ label: 'Reservar', pageName: 'Reservas', route: '/reservas' },
 					].map(({ label, pageName, route }, i) => {
-						if (selectedPageName === pageName)
+						if (!isArbitraryPage && selectedPageName === pageName)
 							return (
 								<div key={i} className="my-auto font-semibold hover:cursor-default">
 									{label}

@@ -57,7 +57,7 @@ export default function FieldInput(props: FieldInputProps) {
 						return props.onChange(e);
 					},
 				} : {})}
-				className="rounded-md border border-background-200 bg-white px-3 py-1 font-medium shadow-sm transition-all dark:border-0 dark:border-opacity-0 dark:bg-background-800 dark:font-light"
+				className="rounded-md border border-background-200 bg-white px-3 py-1 font-medium shadow-sm transition-all dark:border-opacity-0 dark:bg-background-800 dark:font-light"
 			/>
 		</div>
 	);

@@ -7,27 +7,29 @@ import Footer from '../components/layout/Footer';
 import Button from '../components/forms/Button';
 import Table, { TabularData } from '../components/presentation/Table';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faPen, faTrash, faX, faExclamation, faQuestion, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faPen, faTrash, faX } from '@fortawesome/free-solid-svg-icons';
 import type { CanchaSchema, ReservaSchema } from '../schemas';
 import axios from 'axios';
-import config from '../config.json';
+import endpoint from '../backend';
+import { useNavigate } from 'react-router';
 
-export default function Home() {
+export default function Dashboard() {
 	const [ canchas, setCanchas ] = useState<Array<CanchaSchema>>([]);
 	const [ reservas, setReservas ] = useState<Array<ReservaSchema>>([]);
 	const [ canchasLoading, setCanchasLoading ] = useState(true);
 	const [ reservasLoading, setReservasLoading ] = useState(true);
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		(async () => {
-			const canchas = await axios.get(`${config.BACKEND_API_URI}/canchas/`);
+			const canchas = await axios.get(endpoint('/canchas/'));
 			if(canchas == null) return console.error('No se pudieron recuperar las canchas desde la API');
 			setCanchas(canchas.data);
 			setCanchasLoading(false);
 		})();
 
 		(async () => {
-			const reservas = await axios.get(`${config.BACKEND_API_URI}/reservas/`);
+			const reservas = await axios.get(endpoint('/reservas/'));
 			if(reservas == null) return console.error('No se pudieron recuperar las reservas desde la API');
 			setReservas(reservas.data);
 			setReservasLoading(false);
@@ -39,34 +41,9 @@ export default function Home() {
 			<Header selectedPageName="Home" />
 
 			<Main>
-				<h2>Un título</h2>
-				<p>Un poquito de contenido</p>
-				<Section flex='row' className='flex-wrap'>
-					<Button onClick={() => alert('¡Hola!')} kind="primary">
-						Prueba
-					</Button>
-					<Button onClick={() => alert('Adiós...')}>Prueba</Button>
-					<Button onClick={() => alert('Bien ahí')} kind="success">
-						Prueba
-					</Button>
-					<Button onClick={() => alert('Malísimo')} kind="danger">
-						Prueba
-					</Button>
-				</Section>
-				<Section flex='row' className='flex-wrap'>
-					<Button onClick={() => alert('¡Hola!')} icon={faStar} kind="primary">
-						Prueba
-					</Button>
-					<Button onClick={() => alert('Adiós...')} icon={faQuestion}>
-						Prueba
-					</Button>
-					<Button onClick={() => alert('Bien ahí')} icon={faCheck} kind="success">
-						Prueba
-					</Button>
-					<Button onClick={() => alert('Malísimo')} icon={faExclamation} kind="danger">
-						Prueba
-					</Button>
-				</Section>
+				<h2>Dashboard</h2>
+				<p className='pb-6'>Panel de Control de Canchas y Reservas</p>
+				<h3>Canchas</h3>
 				<Section>
 					<Table
 						spread
@@ -92,7 +69,7 @@ export default function Home() {
 							)}
 					/>
 				</Section>
-				<h2>Reservas</h2>
+				<h3 className='pt-3'>Reservas</h3>
 				<Section>
 					<Table
 						spread
@@ -121,8 +98,8 @@ export default function Home() {
 									IDC: reserva.id_cancha,
 									Acciones: (
 										<div className='flex flex-row flex-wrap space-x-2'>
-											<Button onClick={() => updateCancha(reserva.id)} icon={faPen} />
-											<Button onClick={() => deleteCancha(reserva.id)} kind='danger' icon={faTrash} />
+											<Button onClick={() => updateReserva(reserva.id)} icon={faPen} />
+											<Button onClick={() => deleteReserva(reserva.id)} kind='danger' icon={faTrash} />
 										</div>
 									),
 								}))
@@ -136,15 +113,18 @@ export default function Home() {
 	);
 
 	function updateCancha(id: number) {
-		
+		navigate(`/canchas?id=${id}`);
 	}
 
 	function deleteCancha(id: number) {
-		(async () => {
-			const canchas = await axios.get(`${config.BACKEND_API_URI}/canchas/`);
-			if(canchas == null) return console.error('No se pudieron recuperar las canchas desde la API');
-			setCanchas(canchas.data);
-			setCanchasLoading(false);
-		})();
+		navigate(`/delete-conf?t=canchas&id=${id}`);
+	}
+
+	function updateReserva(id: number) {
+		navigate(`/reservas?id=${id}`);
+	}
+
+	function deleteReserva(id: number) {
+		navigate(`/delete-conf?t=reservas&id=${id}`);
 	}
 }

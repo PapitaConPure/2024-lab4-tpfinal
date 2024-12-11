@@ -1,3 +1,6 @@
+import { faHourglass } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 type Row<Columns extends readonly string[]> = Record<Columns[number], any>;
 
 type ColumnStyle = {
@@ -96,7 +99,7 @@ interface TableProps {
 
 const defaultTable = new TabularData('Cargando...')
 	.setColumnStyles({ 'Cargando...': { template: 'auto' } })
-	.addRow({ 'Cargando...': '...' }) as TabularData<[string]>;
+	.addRow({ 'Cargando...': <div className="animate-pulse"><FontAwesomeIcon className="animate-spin" icon={faHourglass}/></div> }) as TabularData<[string]>;
 
 export default function Table({
 	data,
@@ -108,6 +111,8 @@ export default function Table({
 
 	const tableBackgroundOddStyles = 'bg-secondary-400 dark:bg-secondary-300';
 	const tableBackgroundEvenStyles = 'bg-secondary-700 dark:bg-secondary-400';
+
+	//No sé quién me manda a hacer un componente de tabla por mi cuenta
 
 	return (
 		<div

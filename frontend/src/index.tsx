@@ -2,12 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router';
 import './output.css';
-import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
 import Canchas from './pages/Canchas';
 import Reservas from './pages/Reservas';
 import axios from 'axios';
 import config from './config.json';
 import ErrorReport from './pages/ErrorReport';
+import DeleteConfirmation from './pages/DeleteConfirmation';
 
 const rootElem = document.getElementById('root');
 
@@ -22,9 +23,10 @@ axios.get(`${config.BACKEND_API_URI}/`)
   root.render(
     <BrowserRouter>
       <Routes>
-        <Route path='/' element={<Home />} />
+        <Route path='/' element={<Dashboard />} />
         <Route path='/canchas/' element={<Canchas />} />
         <Route path='/reservas/' element={<Reservas />} />
+        <Route path='/delete-conf/' element={<DeleteConfirmation />} />
       </Routes>
     </BrowserRouter>
   );
