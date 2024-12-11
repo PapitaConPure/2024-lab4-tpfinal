@@ -274,7 +274,7 @@ export default function Dashboard() {
 	}
 
 	function deleteCancha(id: number) {
-		navigate(`/delete-conf?t=canchas&id=${id}`);
+		navigate(`/confirm-delete?t=canchas&id=${id}`);
 	}
 
 	function updateReserva(id: number) {
@@ -282,6 +282,6 @@ export default function Dashboard() {
 	}
 
 	function deleteReserva(id: number) {
-		navigate(`/delete-conf?t=reservas&id=${id}`);
+		navigate(`/confirm-delete?t=reservas&id=${id}`);
 	}
 }

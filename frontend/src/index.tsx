@@ -26,7 +26,7 @@ axios.get(`${config.BACKEND_API_URI}/`)
         <Route path='/' element={<Dashboard />} />
         <Route path='/canchas/' element={<Canchas />} />
         <Route path='/reservas/' element={<Reservas />} />
-        <Route path='/delete-conf/' element={<DeleteConfirmation />} />
+        <Route path='/confirm-delete/' element={<DeleteConfirmation />} />
       </Routes>
     </BrowserRouter>
   );
