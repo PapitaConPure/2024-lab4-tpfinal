@@ -1,8 +1,9 @@
 import React from 'react';
+import { numberStringToTelephoneString } from '../../utils';
 
 interface BaseInputProps {
 	id: string;
-	label?: string;
+	label?: React.ReactNode;
 	onChange: React.ChangeEventHandler<HTMLInputElement>;
 	required?: boolean;
 	className?: string;
@@ -46,18 +47,15 @@ export default function FieldInput(props: FieldInputProps) {
 			<input
 				{...inputProps}
 				id={id}
-				{...((props.type === 'tel') ? {
-					onChange: e => {
-						e.target.value = e.target.value
-						.replace(/\D+/g, '')
-						.slice(0, 13)
-						.replace(/^(\d{2})(\d)(\d{3})(\d{3})(\d{4})$/, '+$1 $2 $3 $4-$5')
-						.replace(/^(\d)(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3-$4')
-						.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2-$3');
-						return props.onChange(e);
-					},
-				} : {})}
-				className="rounded-md border border-background-200 bg-white px-3 py-1 font-medium shadow-sm transition-all dark:border-opacity-0 dark:bg-background-800 dark:font-light"
+				{...(props.type === 'tel'
+					? {
+							onChange: (e) => {
+								e.target.value = numberStringToTelephoneString(e.target.value)
+								return props.onChange(e);
+							},
+						}
+					: {})}
+				className="rounded-md border border-background-200 bg-white px-3 py-1 font-medium shadow-sm transition-all focus:border-x-4 focus:border-accent-600 dark:focus:border-x-4 dark:focus:border-accent-500 outline-none dark:border-opacity-0 dark:bg-background-800 dark:font-light"
 			/>
 		</div>
 	);
