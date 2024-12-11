@@ -14,7 +14,7 @@ class Cancha(Base):
 	nombre: Mapped[str] = mapped_column(String(40))
 	techada: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-	reservas: Mapped[List['Reserva']] = relationship('Reserva', back_populates='cancha')
+	reservas: Mapped[List['Reserva']] = relationship('Reserva', cascade='all, delete-orphan', back_populates='cancha')
 
 class Reserva(Base):
 	__tablename__ = 'reservas'
